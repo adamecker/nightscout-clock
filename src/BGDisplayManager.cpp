@@ -1,5 +1,6 @@
 #include "BGDisplayManager.h"
 
+#include <algorithm>
 #include <list>
 
 #include "BGSource.h"
@@ -56,16 +57,48 @@ void BGDisplayManager_::setup() {
     faces.push_back(new BGDisplayFaceSmiley());
     facesNames[9] = "Smiley";
 
-    currentFaceIndex = SettingsManager.settings.default_clockface;
-    if (currentFaceIndex >= faces.size()) {
+    configureFaceCycle();
+
+    if (faceCycleActive) {
+        currentFaceIndex = faceCycleFaces.front();
+    } else {
+        currentFaceIndex = SettingsManager.settings.default_clockface;
+    }
+
+    if (currentFaceIndex < 0 || static_cast<size_t>(currentFaceIndex) >= faces.size()) {
         currentFaceIndex = 0;
     }
 
     currentFace = (faces[currentFaceIndex]);
-    // The boot/default face is assigned here rather than through setFace(), so
-    // give it the same activation hook the switch path uses to initialize its
-    // per-view state.
-    currentFace->onActivate();
+}
+
+void BGDisplayManager_::configureFaceCycle() {
+    faceCycleFaces.clear();
+    faceCycleActive = false;
+    faceCycleTimerStarted = false;
+
+    for (int faceId : SettingsManager.settings.face_cycle_faces) {
+        if (faceId < 0 || static_cast<size_t>(faceId) >= faces.size()) {
+            continue;
+        }
+
+        if (std::find(faceCycleFaces.begin(), faceCycleFaces.end(), faceId) == faceCycleFaces.end()) {
+            faceCycleFaces.push_back(faceId);
+        }
+    }
+
+    if (!SettingsManager.settings.face_cycle_enabled) {
+        return;
+    }
+
+    if (faceCycleFaces.size() < 2) {
+        DEBUG_PRINTF(
+            "Clock face cycling disabled: at least two valid unique faces are required, found %u\n",
+            static_cast<unsigned int>(faceCycleFaces.size()));
+        return;
+    }
+
+    faceCycleActive = true;
 }
 
 std::map<int, String> BGDisplayManager_::getFaces() { return facesNames; }
@@ -75,142 +108,151 @@ int BGDisplayManager_::getCurrentFaceId() { return currentFaceIndex; }
 GlucoseIntervals BGDisplayManager_::getGlucoseIntervals() { return glucoseIntervals; }
 
 void BGDisplayManager_::setFace(int id) {
-    if (id < faces.size()) {
-        currentFaceIndex = id;
-        currentFace = (faces[currentFaceIndex]);
-        // Reset the shared font to the compact default on every face switch.
-        // currentFont is global state, and several faces (Simple, Battery,
-        // Value-and-diff, ...) render text without calling setFont, so without
-        // this a face that leaves the LARGE font active (BigText, Smiley) would
-        // make the next such face render oversized and clip.
-        DisplayManager.setFont(FONT_TYPE::SMALL);
-        currentFace->onActivate();
-        DisplayManager.clearMatrix();
-        lastRefreshMillis = 0;
-        lastRefreshEpochSec = 0;
-        tick();
+    if (id < 0 || static_cast<size_t>(id) >= faces.size()) {
+        return;
+    }
+
+    currentFaceIndex = id;
+    currentFace = (faces[currentFaceIndex]);
+    lastRefreshEpoch = 0;
+    resetFaceCycleTimer();
+    runRenderCycle(RenderReason::FACE_CHANGE, ServerManager.getTimezonedTime());
+}
+
+void BGDisplayManager_::showNextFace() {
+    if (!faceCycleActive) {
+        int nextFaceIndex = currentFaceIndex + 1;
+        if (static_cast<size_t>(nextFaceIndex) >= faces.size()) {
+            nextFaceIndex = 0;
+        }
+        setFace(nextFaceIndex);
+        return;
+    }
+
+    auto current = std::find(faceCycleFaces.begin(), faceCycleFaces.end(), currentFaceIndex);
+    if (current == faceCycleFaces.end()) {
+        setFace(faceCycleFaces.front());
+        return;
+    }
+
+    current++;
+    setFace(current == faceCycleFaces.end() ? faceCycleFaces.front() : *current);
+}
+
+void BGDisplayManager_::showPreviousFace() {
+    if (!faceCycleActive) {
+        int previousFaceIndex = currentFaceIndex - 1;
+        if (previousFaceIndex < 0) {
+            previousFaceIndex = static_cast<int>(faces.size()) - 1;
+        }
+        setFace(previousFaceIndex);
+        return;
+    }
+
+    auto current = std::find(faceCycleFaces.begin(), faceCycleFaces.end(), currentFaceIndex);
+    if (current == faceCycleFaces.end() || current == faceCycleFaces.begin()) {
+        setFace(faceCycleFaces.back());
+    } else {
+        setFace(*--current);
     }
 }
 
-void BGDisplayManager_::tick() { maybeRrefreshScreen(); }
+void BGDisplayManager_::resetFaceCycleTimer() {
+    lastFaceCycleMillis = millis();
+    faceCycleTimerStarted = true;
+}
+
+void BGDisplayManager_::updateFaceCycle() {
+    if (!faceCycleActive) {
+        return;
+    }
+
+    if (MATRIX_OFF) {
+        faceCycleTimerStarted = false;
+        return;
+    }
+
+    unsigned long currentMillis = millis();
+    if (!faceCycleTimerStarted) {
+        lastFaceCycleMillis = currentMillis;
+        faceCycleTimerStarted = true;
+        return;
+    }
+
+    unsigned long intervalMillis =
+        static_cast<unsigned long>(SettingsManager.settings.face_cycle_interval_seconds) * 1000UL;
+    if (currentMillis - lastFaceCycleMillis >= intervalMillis) {
+        showNextFace();
+    }
+}
+
+void BGDisplayManager_::tick() {
+    updateFaceCycle();
+    maybeRrefreshScreen();
+}
+
+void BGDisplayManager_::commitRenderedState(bool dataIsOld) {
+    lastRenderedDataWasOld = dataIsOld;
+    lastRefreshEpoch = ServerManager.getUtcEpoch();
+}
+
+void BGDisplayManager_::runRenderCycle(RenderReason reason, const tm& timeInfo) {
+    bool dataIsOld = displayedReadings.size() > 0 &&
+                     displayedReadings.back().getSecondsAgo() >
+                         60 * SettingsManager.settings.bg_data_too_old_threshold_minutes;
+    RenderContext ctx{reason, timeInfo, dataIsOld, lastRenderedDataWasOld, displayedReadings};
+
+    switch (currentFace->getRenderDecision(ctx)) {
+        case RenderDecision::NONE:
+            return;
+        case RenderDecision::PARTIAL:
+            currentFace->renderPartial(ctx);
+            DisplayManager.update();
+            commitRenderedState(dataIsOld);
+            return;
+        case RenderDecision::FULL:
+            DisplayManager.clearMatrix();
+            if (displayedReadings.size() > 0) {
+                currentFace->showReadings(displayedReadings, dataIsOld);
+            } else {
+                currentFace->showNoData();
+            }
+            DisplayManager.update();
+            commitRenderedState(dataIsOld);
+            return;
+    }
+}
 
 void BGDisplayManager_::maybeRrefreshScreen(bool force) {
     auto currentEpoch = ServerManager.getUtcEpoch();
-    auto currentMillis = millis();
     tm timeInfo = ServerManager.getTimezonedTime();
-    bool frequentRefresh = currentFace->needsFrequentRefresh();
-    unsigned long refreshIntervalMs = frequentRefresh ? currentFace->getFrequentRefreshIntervalMs() : 60000;
 
     auto lastReading = bgDisplayManager.getLastDisplayedGlucoseReading();
 
     if (bgSourceManager.hasNewData(lastReading == NULL ? 0 : lastReading->epoch)) {
         DEBUG_PRINTLN("We have new data");
         bgDisplayManager.showData(bgSourceManager.getInstance().getGlucoseData());
-        lastRefreshMillis = currentMillis;
-        lastRefreshEpochSec = currentEpoch;
     } else {
-        // Frequent faces animate on a millis interval; normal faces refresh once
-        // per wall-clock minute, trying to match the exact :00 second.
-        bool refreshDue;
-        if (frequentRefresh) {
-            refreshDue = force || currentMillis - lastRefreshMillis >= refreshIntervalMs;
-        } else {
-            refreshDue = force || (timeInfo.tm_sec == 0 && currentEpoch > lastRefreshEpochSec) ||
-                         currentEpoch - lastRefreshEpochSec > 60;
-        }
-        if (refreshDue) {
-            lastRefreshMillis = currentMillis;
-            lastRefreshEpochSec = currentEpoch;
-            if (displayedReadings.size() > 0) {
-                bool dataIsOld = displayedReadings.back().getSecondsAgo() >
-                                 60 * SettingsManager.settings.bg_data_too_old_threshold_minutes;
-                // clearMatrix(false) clears the back buffer without pushing a
-                // blank frame to the LEDs. On WS2812 every matrix->show() is a
-                // ~7-8ms interrupts-disabled blit, so the old clearMatrix() here
-                // both wasted a full blit and caused a visible blank flash before
-                // the face redrew.
-                DisplayManager.clearMatrix(false);
-                currentFace->showReadings(displayedReadings, dataIsOld);
-                DisplayManager.update();
-            } else {
-                DisplayManager.clearMatrix(false);
-                currentFace->showNoData();
-                DisplayManager.update();
-            }
+        // We refresh the display every minue trying to match the exact :00 second
+        if (force) {
+            runRenderCycle(RenderReason::FORCED, timeInfo);
+        } else if (
+            timeInfo.tm_sec == 0 && currentEpoch > lastRefreshEpoch ||
+            currentEpoch - lastRefreshEpoch > 60) {
+            runRenderCycle(RenderReason::TIME_TICK, timeInfo);
         }
     }
 }
 
 void BGDisplayManager_::showData(std::list<GlucoseReading> glucoseReadings) {
     if (glucoseReadings.size() == 0) {
-        currentFace->showNoData();
+        displayedReadings.clear();
+        runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
         return;
     }
-
-    DisplayManager.clearMatrix();
-    currentFace->showReadings(glucoseReadings);
 
     displayedReadings = glucoseReadings;
-}
-
-// We draw the horizontal blocks equal to the number of minutes since last reading
-// maximum numer of lines is 5
-// Depending on the face we draw the lines in different places having different sizes
-// The idea is to fit that maximum of 5 lines in the available space
-// We can draw lines in 3 colors:
-// - dark green if reading is less than 6 minutes old
-// - dark orange if reading is between 6 and old_data_threshold_minutes threshold
-// - gray if reading is older than old_data_threshold_minutes threshold
-// @param lastReading - the last reading to draw the lines for
-// @param width - the width of the available space in pixels
-// @param yPosition - the y position of the lines
-// @param xPosition - the x position of the lines
-void BGDisplayManager_::drawTimerBlocks(
-    GlucoseReading lastReading, int width, int xPosition, int yPosition) {
-    const int MAX_BLOXCS = 5;  // maximum number of blocks to draw
-
-    int blocksCount = lastReading.getSecondsAgo() / 60;
-    if (blocksCount > MAX_BLOXCS) {
-        blocksCount = MAX_BLOXCS;  // we draw maximum 5 lines
-    }
-    if (blocksCount <= 0) {
-#ifdef DEBUG_DISPLAY
-        DEBUG_PRINTLN("No blocks to draw, not drawing timer blocks");
-#endif
-        return;
-    }
-
-    // minimal block size is 1 pixel, size between blocks is 1 pixel, so we get width, subtract spaces
-    // between lines and divide by the maximum number of lines
-    int blockSize = blockSize = (width - 4) / MAX_BLOXCS;
-    if (blockSize < 1) {
-#ifdef DEBUG_DISPLAY
-        DEBUG_PRINTLN("Block size is less than 1, not drawing timer blocks");
-#endif
-        return;
-    }
-
-    // Now let's alter xPosition to center the blocks in the available space
-    xPosition += (width - (blockSize * MAX_BLOXCS + (MAX_BLOXCS - 1))) / 2;
-
-    uint16_t color = COLOR_GREEN;
-    if (lastReading.getSecondsAgo() >= 60 * SettingsManager.settings.bg_data_too_old_threshold_minutes) {
-        color = COLOR_GRAY;  // old data
-    } else if (lastReading.getSecondsAgo() >= (MAX_BLOXCS + 1) * 60) {
-        color = COLOR_YELLOW;  // warning data
-    }
-#ifdef DEBUG_DISPLAY
-    DEBUG_PRINTF(
-        "Drawing %d blocks of size %d at position (%d, %d) with color %04X", blocksCount, blockSize,
-        xPosition, yPosition, color);
-#endif
-
-    for (int i = 0; i < blocksCount; i++) {
-        int x = xPosition + i * (blockSize + 1);  // +1 for the space between blocks
-        for (int j = 0; j < blockSize; j++) {
-            DisplayManager.drawPixel(x + j, yPosition, color, false);
-        }
-    }
+    runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
 }
 
 GlucoseReading* BGDisplayManager_::getLastDisplayedGlucoseReading() {

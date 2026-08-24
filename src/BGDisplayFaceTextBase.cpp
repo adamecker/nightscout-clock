@@ -157,5 +157,4 @@ void BGDisplayFaceTextBase::showTrendVerticalLine(int x, BG_TREND trend, bool da
             DisplayManager.setTextColor(COLOR_BLACK);
             break;
     }
-    DisplayManager.update();
 }

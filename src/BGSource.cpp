@@ -39,6 +39,7 @@ void BGSource::tick() {
             // small font (yAdvance 6) this baseline is centered for.
             DisplayManager.setFont(FONT_TYPE::SMALL);
             DisplayManager.printText(0, 6, "To API", TEXT_ALIGNMENT::CENTER, 0);
+            DisplayManager.update();
         }
 
         glucoseReadings = updateReadings(glucoseReadings);

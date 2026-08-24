@@ -79,6 +79,18 @@ private:
     int currentFaceIndex;
     GlucoseIntervals glucoseIntervals;
     std::map<int, String> facesNames;
+    bool lastRenderedDataWasOld = false;
+    bool faceCycleActive = false;
+    bool faceCycleTimerStarted = false;
+    unsigned long lastFaceCycleMillis = 0;
+    std::vector<int> faceCycleFaces;
+    unsigned long long lastRefreshEpoch = 0;
+
+    void configureFaceCycle();
+    void updateFaceCycle();
+    void resetFaceCycleTimer();
+    void runRenderCycle(RenderReason reason, const tm& timeInfo);
+    void commitRenderedState(bool dataIsOld);
 
 public:
     static BGDisplayManager_& getInstance();
@@ -93,16 +105,10 @@ public:
     int getCurrentFaceId();
 
     void setFace(int id);
+    void showNextFace();
+    void showPreviousFace();
 
     static void drawTimerBlocks(GlucoseReading lastReading, int width, int xPosition, int yPosition);
-
-private:
-    // Frequent-refresh faces (animations) are timed in millis since boot; normal
-    // faces refresh on the wall-clock minute and are timed in UTC epoch seconds.
-    // These are kept in separate fields so a face switch never compares a millis
-    // value against an epoch value (which previously underflowed).
-    unsigned long lastRefreshMillis;
-    unsigned long lastRefreshEpochSec;
 };
 
 extern BGDisplayManager_& bgDisplayManager;

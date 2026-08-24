@@ -178,10 +178,13 @@ void DisplayManager_::printText(
     } else {
         matrix->print(text);
     }
+<<<<<<< HEAD
 
     if (updateMatrix) {
         matrix->show();
     }
+=======
+>>>>>>> upstream/main
 }
 
 void DisplayManager_::drawBitmap(
@@ -251,6 +254,7 @@ void DisplayManager_::showFatalError(String errorMessage) {
         while (position > finalPosition) {
             matrix->clear();
             printText(position, 6, errorMessage.c_str(), TEXT_ALIGNMENT::LEFT, 1);
+            update();
             position -= 0.18;
             checckForImprovWifiConnection();
         }
@@ -290,22 +294,10 @@ void DisplayManager_::setPower(bool state) {
 }
 
 // cycle to previous face
-void DisplayManager_::leftButton() {
-    if (bgDisplayManager.getCurrentFaceId() == 0) {
-        bgDisplayManager.setFace(bgDisplayManager.getFaces().size() - 1);
-    } else {
-        bgDisplayManager.setFace(bgDisplayManager.getCurrentFaceId() - 1);
-    }
-}
+void DisplayManager_::leftButton() { bgDisplayManager.showPreviousFace(); }
 
 // cycle to next face
-void DisplayManager_::rightButton() {
-    if (bgDisplayManager.getCurrentFaceId() == bgDisplayManager.getFaces().size() - 1) {
-        bgDisplayManager.setFace(0);
-    } else {
-        bgDisplayManager.setFace(bgDisplayManager.getCurrentFaceId() + 1);
-    }
-}
+void DisplayManager_::rightButton() { bgDisplayManager.showNextFace(); }
 
 // decrease brightness if not auto mode
 void DisplayManager_::leftButtonLong() {

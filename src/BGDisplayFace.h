@@ -8,6 +8,27 @@
 #include "SettingsManager.h"
 #include "enums.h"
 
+enum class RenderReason {
+    NEW_DATA,
+    TIME_TICK,
+    FACE_CHANGE,
+    FORCED,
+};
+
+enum class RenderDecision {
+    NONE,
+    PARTIAL,
+    FULL,
+};
+
+struct RenderContext {
+    RenderReason reason;
+    tm currentTime;
+    bool dataIsOld;
+    bool wasDataOld;
+    const std::list<GlucoseReading>& readings;
+};
+
 class BGDisplayFace {
 public:
     virtual void showReadings(
@@ -19,6 +40,8 @@ public:
     // and reused, so any per-view state that would otherwise leak across a
     // switch (e.g. a cached "content fits / is scrolling" flag) is reset here.
     virtual void onActivate() const;
+    virtual RenderDecision getRenderDecision(const RenderContext& ctx) const;
+    virtual void renderPartial(const RenderContext& ctx) const;
 };
 
 #endif
