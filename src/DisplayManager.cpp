@@ -178,13 +178,9 @@ void DisplayManager_::printText(
     } else {
         matrix->print(text);
     }
-<<<<<<< HEAD
-
     if (updateMatrix) {
         matrix->show();
     }
-=======
->>>>>>> upstream/main
 }
 
 void DisplayManager_::drawBitmap(
