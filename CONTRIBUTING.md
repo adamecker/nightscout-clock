@@ -11,7 +11,12 @@ My computer is running linux, but you can use Windows or MacOS as well, there ar
   - install python as a PlatformIO dependency
 - clone the project using Visual Studio Code
 - PlatformIO should detect the project
-- Comment out (place `#` at the beginning of) [this](https://github.com/ktomy/nightscout-clock/blob/main/platformio.ini#L38) line
+- Configure the serial port for your machine:
+  - Copy `platformio.local.ini.example` to `platformio.local.ini`
+  - Uncomment the appropriate `upload_port` example and set it to your device
+  - Optionally uncomment `monitor_port` for PlatformIO's native serial monitor
+  - Find available ports with `pio device list`; prefer a stable `/dev/serial/by-id/` path on Linux
+  - `platformio.local.ini` is ignored by Git and overrides the shared settings in `platformio.ini`
 - You should be able to see PlatformIO tab in the sidebar
   - Select `ulanzi_debug` -> `General` -> `Build`
   - `ulanzi_debug` -> `Platform` -> `Build Filesystem image`

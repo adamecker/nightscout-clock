@@ -49,7 +49,7 @@ For releases, follow the canonical procedure in `CONTRIBUTING.md`.
 - If needed, prepare the upcoming version changelog in `README.md`, but do not manually bump the `Current version` line before running the script.
 - After the release tag is pushed, monitor the GitHub Actions workflow `Build and deploy on Github Pages` and require it to succeed.
 
-`platformio.ini` defines the `ulanzi_debug` environment and the serial upload port used by the scripts. Check `upload_port` before flashing from a different machine or after reconnecting the device.
+`platformio.ini` defines the `ulanzi_debug` environment and loads the git-ignored `platformio.local.ini` for machine-specific settings. Copy `platformio.local.ini.example` and define `upload_port` there before using the upload, reset, or monitor scripts.
 
 ## Coding Style & Naming Conventions
 
@@ -81,6 +81,6 @@ Before opening a pull request, start a discussion or issue for non-trivial chang
 
 ## Configuration Tips
 
-`scripts/` and `platformio.ini` assume a specific serial device path for upload. If flashing fails on a different machine or after reconnecting the clock, update `upload_port` before troubleshooting deeper firmware issues.
+The upload, reset, and monitor scripts resolve the same `upload_port` through `scripts/get_port.sh`. If flashing or monitoring fails on a different machine or after reconnecting the clock, update `upload_port` in `platformio.local.ini` before troubleshooting deeper firmware issues.
 
 Treat `data/` as the runtime web UI payload and `data_dev/` as the local development source. If you change the device-served UI, verify both the browser behavior and the rebuilt filesystem image on hardware.

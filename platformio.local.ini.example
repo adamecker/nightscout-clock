@@ -1,0 +1,19 @@
+; Copy this file to platformio.local.ini and uncomment the settings for your
+; machine. The local file is ignored by Git and overrides platformio.ini.
+
+[env]
+; Linux (prefer the stable /dev/serial/by-id path):
+; upload_port = /dev/serial/by-id/usb-your-device
+
+; macOS:
+; upload_port = /dev/cu.usbserial-your-device
+
+; Windows:
+; upload_port = COM3
+
+; Optional for PlatformIO's native serial monitor. The helper scripts always
+; use upload_port so upload, reset, and monitor target the same device.
+; monitor_port = ${env.upload_port}
+
+; Optional machine-specific speed override:
+; upload_speed = 921600
