@@ -11,16 +11,13 @@ My computer is running linux, but you can use Windows or MacOS as well, there ar
   - install python as a PlatformIO dependency
 - clone the project using Visual Studio Code
 - PlatformIO should detect the project
-- (Optional) Configure your machine-specific upload settings. PlatformIO
-  auto-detects the serial port, so this is only needed if auto-detect picks the
-  wrong device or you want a faster upload speed:
-  - Copy `platformio.local.ini.example` to `platformio.local.ini`
-    (`cp platformio.local.ini.example platformio.local.ini`)
-  - Set `upload_port` to your board's device path (find it with `pio device list`)
-  - `platformio.local.ini` is git-ignored, so your local settings never get
-    committed. `platformio.ini` merges it automatically via `extra_configs`.
-  - The unix helper scripts (`scripts/upload.sh`, `scripts/reset.sh`) require an
-    explicit `upload_port`, so create this file before using them.
+- Configure the serial port for your machine:
+  - Copy `platformio.local.ini.example` to `platformio.local.ini` (`cp platformio.local.ini.example platformio.local.ini`)
+  - Uncomment the appropriate `upload_port` example and set it to your device
+  - Optionally uncomment `monitor_port` for PlatformIO's native serial monitor
+  - Optionally set `upload_speed` if you want a machine-specific speed override
+  - Find available ports with `pio device list`; prefer a stable `/dev/serial/by-id/` path on Linux
+  - `platformio.local.ini` is ignored by Git and overrides the shared settings in `platformio.ini`
 - You should be able to see PlatformIO tab in the sidebar
   - Select `ulanzi_debug` -> `General` -> `Build`
   - `ulanzi_debug` -> `Platform` -> `Build Filesystem image`
