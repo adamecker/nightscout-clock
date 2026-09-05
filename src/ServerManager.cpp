@@ -14,6 +14,29 @@
 #include "globals.h"
 #include "time.h"
 
+#include <esp_wifi.h>
+#include <Preferences.h>
+
+// Helper to parse colon or dash separated MAC strings (e.g. AA:BB:CC:DD:EE:FF)
+static bool parseCustomMac(const String& macStr, uint8_t* macBytes) {
+    int values[6];
+    int parsed = sscanf(macStr.c_str(), "%x:%x:%x:%x:%x:%x",
+                        &values[0], &values[1], &values[2],
+                        &values[3], &values[4], &values[5]);
+    if (parsed != 6) {
+        parsed = sscanf(macStr.c_str(), "%x-%x-%x-%x-%x-%x",
+                        &values[0], &values[1], &values[2],
+                        &values[3], &values[4], &values[5]);
+    }
+    if (parsed == 6) {
+        for (int i = 0; i < 6; i++) {
+            macBytes[i] = (uint8_t)values[i];
+        }
+        return true;
+    }
+    return false;
+}
+
 // The getter for the instantiated singleton instance
 ServerManager_& ServerManager_::getInstance() {
     static ServerManager_ instance;
