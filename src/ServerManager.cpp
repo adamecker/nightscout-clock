@@ -209,6 +209,25 @@ bool tryConnectToWiFi(String wifi_type, String ssid, String username, String pas
 
     WiFi.mode(WIFI_STA);
 
+    // --- Read and apply custom MAC from storage ---
+    Preferences macPrefs;
+    macPrefs.begin("custom_net", true); // read-only
+    String storedMac = macPrefs.getString("mac", "");
+    macPrefs.end();
+
+    if (storedMac.length() > 0) {
+        uint8_t macBuf[6];
+        if (parseCustomMac(storedMac, macBuf)) {
+            esp_err_t err = esp_wifi_set_mac(WIFI_IF_STA, macBuf);
+            if (err == ESP_OK) {
+                DEBUG_PRINTF("Successfully spoofed MAC: %s\n", storedMac.c_str());
+            } else {
+                DEBUG_PRINTF("Failed to set MAC: %d\n", err);
+            }
+        }
+    }
+    // ----------------------------------------------
+
     DEBUG_PRINTF("Connecting to %s (%s)\n", ssid.c_str(), wifi_type.c_str());
 
     initiateWiFiConnection(wifi_type, ssid, username, password);
