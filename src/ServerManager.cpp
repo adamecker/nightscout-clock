@@ -576,6 +576,64 @@ void ServerManager_::setupWebServer(IPAddress ip) {
             }
         }));
 
+        // --- Custom MAC Configuration Web Portal ---
+    ws->on("/mac", HTTP_GET, [](AsyncWebServerRequest *request) {
+        Preferences macPrefs;
+        macPrefs.begin("custom_net", true);
+        String currentCustomMac = macPrefs.getString("mac", "");
+        macPrefs.end();
+
+        String hwMac = WiFi.macAddress();
+
+        String html = "<!DOCTYPE html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>"
+                      "<style>body{font-family:sans-serif;padding:20px;max-width:400px;margin:auto;background:#1e1e1e;color:#eee}"
+                      "input[type=text]{width:100%;padding:12px;margin:8px 0;box-sizing:border-box;border-radius:6px;border:1px solid #444;background:#2d2d2d;color:#fff;font-size:16px}"
+                      "input[type=submit]{width:100%;background:#04AA6D;color:white;padding:14px;border:none;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}"
+                      ".card{background:#2a2a2a;padding:15px;border-radius:6px;margin-bottom:20px;font-size:14px;line-height:1.5}"
+                      "a{color:#4da3ff;text-decoration:none}</style></head><body>"
+                      "<h2>Clock MAC Setup</h2>"
+                      "<div class='card'><strong>Factory Hardware MAC:</strong><br><code>" + hwMac + "</code></div>"
+                      "<form method='POST' action='/mac'>"
+                      "<label for='mac'><b>Custom MAC Address:</b></label>"
+                      "<input type='text' id='mac' name='mac' placeholder='A4:83:E7:2B:10:9C' value='" + currentCustomMac + "'>"
+                      "<p style='font-size:12px;color:#aaa'>Enter your laptop's MAC address. Leave blank to revert to factory hardware MAC.</p>"
+                      "<input type='submit' value='Save & Reboot Clock'>"
+                      "</form><br><p><a href='/'>&larr; Back to Main Settings</a></p></body></html>";
+
+        request->send(200, "text/html", html);
+    });
+
+    ws->on("/mac", HTTP_POST, [](AsyncWebServerRequest *request) {
+        if (request->hasParam("mac", true)) {
+            String newMac = request->getParam("mac", true)->value();
+            newMac.trim();
+
+            Preferences macPrefs;
+            macPrefs.begin("custom_net", false); // read-write mode
+            if (newMac.length() > 0) {
+                macPrefs.putString("mac", newMac);
+            } else {
+                macPrefs.remove("mac"); // empty string clears the override
+            }
+            macPrefs.end();
+
+            String resp = "<!DOCTYPE html><html><body style='font-family:sans-serif;background:#1e1e1e;color:#eee;text-align:center;padding:40px;'>"
+                          "<h3>MAC Address Saved!</h3><p>Rebooting clock to apply changes...</p>"
+                          "<script>setTimeout(function(){ window.location.href='/'; }, 5000);</script>"
+                          "</body></html>";
+            request->send(200, "text/html", resp);
+
+            // Give the async server time to send the response before restarting
+            xTaskCreate([](void*) {
+                vTaskDelay(pdMS_TO_TICKS(1500));
+                ESP.restart();
+            }, "restart_task", 2048, NULL, 1, NULL);
+        } else {
+            request->send(400, "text/plain", "Missing MAC parameter");
+        }
+    });
+    // -------------------------------------------
+    
     ws->on("/api/factory-reset", HTTP_POST, [this](AsyncWebServerRequest* request) {
         if (!enforceAuthentication(request)) {
             return;
