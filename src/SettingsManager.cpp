@@ -303,7 +303,7 @@ bool SettingsManager_::loadSettingsFromFile() {
     // Additional WiFi
     settings.additional_wifi_enable = (*doc)["additional_wifi_enable"].as<bool>();
     settings.additional_wifi_type = (*doc)["additional_wifi_type"].as<String>();
-    settings.additional_ssid = (*doc)["additional_ssid"].as<String>();
+    settings.additional_wifi_ssid = (*doc)["additional_ssid"].as<String>();
     settings.additional_wifi_username = (*doc)["additional_wifi_username"].as<String>();
     settings.additional_wifi_password = (*doc)["additional_wifi_password"].as<String>();
 
