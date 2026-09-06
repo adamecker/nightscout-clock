@@ -3,8 +3,11 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <Preferences.h>
 
 #include "globals.h"
+
+#define CONFIG_JSON_BAK "/config.bak"
 
 namespace {
 bool isValidFaceCycleInterval(int intervalSeconds) {
@@ -22,7 +25,25 @@ SettingsManager_& SettingsManager_::getInstance() {
 // Initialize the global shared instance
 SettingsManager_& SettingsManager = SettingsManager.getInstance();
 
-void SettingsManager_::setup() { LittleFS.begin(); }
+void SettingsManager_::setup() {
+    bool mounted = false;
+    // Layer 1: Retry mounting up to 3 times with settling delays
+    for (int attempt = 1; attempt <= 3; attempt++) {
+        if (LittleFS.begin(false)) {
+            mounted = true;
+            DEBUG_PRINTF("LittleFS mounted successfully on attempt %d\n", attempt);
+            break;
+        }
+        DEBUG_PRINTF("LittleFS mount attempt %d failed, waiting...\n", attempt);
+        LittleFS.end();
+        delay(150);
+    }
+
+    if (!mounted) {
+        DEBUG_PRINTLN("LittleFS unmountable after 3 tries. Mounting with formatOnFail...");
+        LittleFS.begin(true);
+    }
+}
 
 bool copyFile(const char* srcPath, const char* destPath) {
     File srcFile = LittleFS.open(srcPath, "r");
@@ -56,39 +77,109 @@ void SettingsManager_::factoryReset() {
     ESP.restart();
 }
 
-JsonDocument* SettingsManager_::readConfigJsonFile() {
-    JsonDocument* doc;
-    if (LittleFS.exists(CONFIG_JSON)) {
-        File file = LittleFS.open(CONFIG_JSON);
-        if (!file || file.isDirectory()) {
-            DEBUG_PRINTLN("Failed to open config file for reading");
-            return NULL;
-        }
-
-        doc = new JsonDocument();
-        DeserializationError error = deserializeJson(*doc, file);
-        if (error) {
-            DEBUG_PRINTF(
-                "Deserialization error. File size: %d, requested memory: %d. Error: %s\n", file.size(),
-                (int)(file.size() * 2), error.c_str());
-            file.close();
-            return NULL;
-        }
-        return doc;
-    } else {
-        DEBUG_PRINTLN("Cannot read configuration file");
-        factoryReset();
+// Helper: Safely reads and parses a JSON file, trimming any power-cut trailing garbage
+static JsonDocument* safeReadJsonFile(const char* path) {
+    if (!LittleFS.exists(path)) {
         return NULL;
     }
+
+    File file = LittleFS.open(path, "r");
+    if (!file || file.isDirectory()) {
+        DEBUG_PRINTF("Failed to open %s for reading\n", path);
+        return NULL;
+    }
+
+    String content = file.readString();
+    file.close();
+
+    if (content.length() == 0) {
+        return NULL;
+    }
+
+    // Layer 2: Trim trailing null or garbage bytes after the final '}'
+    int lastBrace = content.lastIndexOf('}');
+    if (lastBrace != -1 && lastBrace < (int)content.length() - 1) {
+        content = content.substring(0, lastBrace + 1);
+    }
+
+    auto doc = new JsonDocument();
+    DeserializationError error = deserializeJson(*doc, content);
+    if (error) {
+        DEBUG_PRINTF("JSON error in %s: %s\n", path, error.c_str());
+        delete doc;
+        return NULL;
+    }
+
+    return doc;
+}
+
+JsonDocument* SettingsManager_::readConfigJsonFile() {
+    // 1. Try reading the primary config file
+    JsonDocument* doc = safeReadJsonFile(CONFIG_JSON);
+    if (doc != NULL) {
+        return doc;
+    }
+
+    // 2. Layer 3: If primary failed, try loading from the backup file
+    DEBUG_PRINTLN("Primary config unreadable, trying backup /config.bak...");
+    doc = safeReadJsonFile(CONFIG_JSON_BAK);
+    if (doc != NULL) {
+        DEBUG_PRINTLN("Restoring primary config from /config.bak...");
+        copyFile(CONFIG_JSON_BAK, CONFIG_JSON);
+        return doc;
+    }
+
+    // 3. Fallback: Only copy factory default if both primary and backup failed
+    DEBUG_PRINTLN("Both primary and backup failed. Falling back to factory template...");
+    copyFile(CONFIG_JSON_FACTORY, CONFIG_JSON);
+    return safeReadJsonFile(CONFIG_JSON);
 }
 
 bool SettingsManager_::loadSettingsFromFile() {
     auto doc = readConfigJsonFile();
-    if (doc == NULL)
-        return false;
+    if (doc == NULL) {
+        DEBUG_PRINTLN("Warning: Could not read config file, checking NVS fallback...");
+
+        // Layer 4: Load Wi-Fi credentials from crash-proof NVS storage
+        Preferences netPrefs;
+        netPrefs.begin("custom_net", true);
+        settings.ssid = netPrefs.getString("ssid", "");
+        settings.wifi_password = netPrefs.getString("pass", "");
+        netPrefs.end();
+
+        settings.bg_low_warn_limit = 70;
+        settings.bg_high_warn_limit = 180;
+        settings.bg_low_urgent_limit = 55;
+        settings.bg_high_urgent_limit = 250;
+        settings.bg_units = BG_UNIT::MGDL;
+        settings.brightness_mode = BRIGHTNES_MODE::AUTO_LINEAR;
+        settings.brightness_level = 5;
+        settings.default_clockface = 0;
+        settings.bg_source = BG_SOURCE::NO_SOURCE;
+        settings.tz_libc_value = "PST8PDT,M3.2.0,M11.1.0";
+        settings.time_format = TIME_FORMAT::HOURS_12;
+        settings.alarm_urgent_low_enabled = false;
+        settings.alarm_low_enabled = false;
+        settings.alarm_high_enabled = false;
+        settings.additional_wifi_enable = false;
+        settings.custom_hostname_enable = false;
+        settings.custom_nodatatimer_enable = false;
+        settings.web_auth_enable = false;
+
+        return true; // Never trigger showFatalError
+    }
 
     settings.ssid = (*doc)["ssid"].as<String>();
     settings.wifi_password = (*doc)["password"].as<String>();
+
+    // Mirror Wi-Fi credentials into NVS for safe keeping
+    if (settings.ssid.length() > 0) {
+        Preferences netPrefs;
+        netPrefs.begin("custom_net", false);
+        netPrefs.putString("ssid", settings.ssid);
+        netPrefs.putString("pass", settings.wifi_password);
+        netPrefs.end();
+    }
 
     settings.bg_low_warn_limit = (*doc)["low_mgdl"].as<int>();
     settings.bg_high_warn_limit = (*doc)["high_mgdl"].as<int>();
@@ -212,7 +303,7 @@ bool SettingsManager_::loadSettingsFromFile() {
     // Additional WiFi
     settings.additional_wifi_enable = (*doc)["additional_wifi_enable"].as<bool>();
     settings.additional_wifi_type = (*doc)["additional_wifi_type"].as<String>();
-    settings.additional_wifi_ssid = (*doc)["additional_ssid"].as<String>();
+    settings.additional_ssid = (*doc)["additional_ssid"].as<String>();
     settings.additional_wifi_username = (*doc)["additional_wifi_username"].as<String>();
     settings.additional_wifi_password = (*doc)["additional_wifi_password"].as<String>();
 
@@ -383,11 +474,13 @@ bool SettingsManager_::trySaveJsonAsSettings(JsonDocument doc) {
     }
 
     auto result = file.print(doc.as<String>());
-
     file.close();
     if (!result) {
         return false;
     }
+
+    // Automatically create a backup file every time settings are saved
+    copyFile(CONFIG_JSON, CONFIG_JSON_BAK);
 
     return true;
 }
