@@ -1,14 +1,12 @@
-#pragma once
+#ifndef BGDISPLAYFACESMILEYPLUSSTATS_H
+#define BGDISPLAYFACESMILEYPLUSSTATS_H
 
-#include "BGDisplayFace.h"
+#include "BGDisplayFaceTextBase.h"
+#include "BGDisplayFaceWithAge.h"
 
-class BGDisplayFaceSmileyPlusStats : public BGDisplayFace {
+class BGDisplayFaceSmileyPlusStats : public BGDisplayFaceTextBase, public BGDisplayFaceWithAge {
 public:
-    explicit BGDisplayFaceSmileyPlusStats(DisplayManager& displayManager);
-    void update() override;
-    void render() override;
-
-private:
-    uint8_t _staleBlink = 0;
-    uint32_t _lastBlink = 0;
+    void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
 };
+
+#endif

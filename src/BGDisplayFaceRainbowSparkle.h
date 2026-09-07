@@ -1,16 +1,16 @@
-#pragma once
+#ifndef BGDISPLAYFACERAINBOWSPARKLE_H
+#define BGDISPLAYFACERAINBOWSPARKLE_H
 
-#include "BGDisplayFace.h"
+#include "BGDisplayFaceTextBase.h"
 
-class BGDisplayFaceRainbowSparkle : public BGDisplayFace {
+class BGDisplayFaceRainbowSparkle : public BGDisplayFaceTextBase {
 public:
-    explicit BGDisplayFaceRainbowSparkle(DisplayManager& displayManager);
-    void update() override;
-    void render() override;
+    void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
+    bool needsFrequentRefresh() const override;
+    unsigned long getFrequentRefreshIntervalMs() const override;
 
 private:
-    uint8_t _hueOffset = 0;
-    uint8_t _frame = 0;
-    uint32_t _lastTick = 0;
-    void drawRainbowText(int16_t startX, int16_t startY, const String& text);
+    void showAnimatedReading(const GlucoseReading& reading, bool dataIsOld) const;
 };
+
+#endif

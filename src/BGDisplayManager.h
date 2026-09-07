@@ -17,6 +17,9 @@
 #include "BGDisplayFaceGraphAndBG.h"
 #include "BGDisplayFaceSimple.h"
 #include "BGDisplayFaceSmiley.h"
+#include "BGDisplayFaceRainbowSparkle.h"
+#include "BGDisplayFaceSmileyPlusStats.h"
+#include "BGDisplayFaceUnicorn.h"
 #include "BGDisplayFaceValueAndDiff.h"
 #include "BGSource.h"
 

@@ -1,65 +1,81 @@
 #include "BGDisplayFaceSmileyPlusStats.h"
-#include "BGSourceManager.h"
+#include "BGDisplayManager.h"
 #include "globals.h"
 
-static const uint8_t PROGMEM MINI_HAPPY[7] = {
-    0x1C, 0x22, 0x49, 0x41, 0x49, 0x22, 0x1C
+namespace {
+const uint8_t PROGMEM MINI_HAPPY[] = {
+    0b00111000,
+    0b01000100,
+    0b10101010,
+    0b10000010,
+    0b10101010,
+    0b01000100,
+    0b00111000
 };
-static const uint8_t PROGMEM MINI_NEUTRAL[7] = {
-    0x1C, 0x22, 0x49, 0x41, 0x41, 0x22, 0x1C
+
+const uint8_t PROGMEM MINI_NEUTRAL[] = {
+    0b00111000,
+    0b01000100,
+    0b10101010,
+    0b10000010,
+    0b10000010,
+    0b01000100,
+    0b00111000
 };
-static const uint8_t PROGMEM MINI_SAD[7] = {
-    0x1C, 0x22, 0x49, 0x41, 0x55, 0x22, 0x1C
+
+const uint8_t PROGMEM MINI_SAD[] = {
+    0b00111000,
+    0b01000100,
+    0b10101010,
+    0b10000010,
+    0b10101010,
+    0b01000100,
+    0b00111000
 };
+} // namespace
 
-BGDisplayFaceSmileyPlusStats::BGDisplayFaceSmileyPlusStats(DisplayManager& displayManager)
-    : BGDisplayFace(displayManager) {
-}
+void BGDisplayFaceSmileyPlusStats::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
+    auto lastReading = readings.back();
+    auto bgLevel = bgDisplayManager.getGlucoseIntervals().getBGLevel(lastReading.sgv);
+    bool isFallingFast = (lastReading.trend == BG_TREND::DOUBLE_DOWN || lastReading.trend == BG_TREND::SINGLE_DOWN);
 
-void BGDisplayFaceSmileyPlusStats::update() {
-    uint32_t now = millis();
-    if (now - _lastBlink > 700) {
-        _staleBlink = !_staleBlink;
-        _lastBlink = now;
-    }
-}
-
-void BGDisplayFaceSmileyPlusStats::render() {
-    _displayManager.clear();
-    BGReading r = bgSourceManager.getLatestReading();
-    uint32_t ageMin = (r.timestampMs > 0) ? (millis() - r.timestampMs) / 60000 : 0;
-
-    bool isLow = (r.value < 70 && r.value > 0);
-    bool isHigh = (r.value > 180);
-    bool isFallingFast = (r.delta <= -3 || r.trend == TREND_DOUBLE_DOWN || r.trend == TREND_SINGLE_DOWN);
-    bool headingToTarget = (r.value > 180 && r.delta < 0) || (r.value < 70 && r.delta > 0) || (!isLow && !isHigh);
-
-    CRGB statusColor = CRGB::Green;
     const uint8_t* moodBmp = MINI_HAPPY;
+    uint16_t statusColor = COLOR_GREEN;
 
-    if (isLow) {
-        statusColor = CRGB::Red;
+    if (bgLevel == BG_LEVEL::URGENT_LOW || bgLevel == BG_LEVEL::WARNING_LOW) {
+        statusColor = COLOR_RED;
         moodBmp = MINI_SAD;
-    } else if (isHigh) {
-        statusColor = CRGB::Gold;
+    } else if (bgLevel == BG_LEVEL::URGENT_HIGH || bgLevel == BG_LEVEL::WARNING_HIGH) {
+        statusColor = COLOR_YELLOW;
         moodBmp = MINI_NEUTRAL;
     } else if (isFallingFast) {
-        statusColor = CRGB::OrangeRed;
+        statusColor = COLOR_YELLOW;
         moodBmp = MINI_NEUTRAL;
     }
 
-    _displayManager.drawBitmap(0, 0, moodBmp, 7, 7, statusColor);
-
-    CRGB numColor = (ageMin >= 15) ? CRGB(70, 70, 70) : CRGB::White;
-    _displayManager.drawString(8, 1, String(r.value), numColor);
-
-    String deltaStr = (r.delta >= 0 ? "+" : "") + String(r.delta);
-    CRGB deltaColor = headingToTarget ? CRGB::Green : CRGB::Orange;
-    _displayManager.drawString(20, 1, deltaStr, deltaColor);
-
-    _displayManager.drawTrendArrow(28, 1, r.trend, statusColor);
-
-    if (ageMin >= 10 && _staleBlink) {
-        _displayManager.drawPixel(31, 7, CRGB::Red);
+    if (dataIsOld) {
+        statusColor = COLOR_GRAY;
     }
+
+    DisplayManager.clearMatrix(false);
+    DisplayManager.drawBitmap(0, 0, moodBmp, 7, 7, statusColor, false);
+    showReading(lastReading, 8, 6, TEXT_ALIGNMENT::LEFT, FONT_TYPE::MEDIUM, dataIsOld, false);
+
+    // Delta calculation
+    if (readings.size() >= 2) {
+        auto it = readings.rbegin();
+        it++;
+        int deltaVal = lastReading.sgv - it->sgv;
+        String deltaStr = (deltaVal >= 0 ? "+" : "") + String(deltaVal);
+        bool headingToTarget = (lastReading.sgv > 180 && deltaVal < 0) || (lastReading.sgv < 70 && deltaVal > 0) || (lastReading.sgv >= 70 && lastReading.sgv <= 180);
+        uint16_t deltaColor = dataIsOld ? (uint16_t)COLOR_GRAY : (headingToTarget ? (uint16_t)COLOR_GREEN : (uint16_t)COLOR_YELLOW);
+
+        DisplayManager.setFont(FONT_TYPE::SMALL);
+        DisplayManager.setTextColor(deltaColor);
+        DisplayManager.printText(24, 6, deltaStr.c_str(), TEXT_ALIGNMENT::RIGHT, 1, false);
+    }
+
+    showTrendArrow(lastReading, MATRIX_WIDTH - 5, 1, dataIsOld, false, false);
+    drawTimerBlocks(lastReading, MATRIX_WIDTH, 0, 7);
+    DisplayManager.update();
 }

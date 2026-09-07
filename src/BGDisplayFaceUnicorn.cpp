@@ -1,120 +1,136 @@
 #include "BGDisplayFaceUnicorn.h"
-#include "BGSourceManager.h"
+#include "BGDisplayManager.h"
 #include "globals.h"
 
-BGDisplayFaceUnicorn::BGDisplayFaceUnicorn(DisplayManager& displayManager)
-    : BGDisplayFace(displayManager) {
+namespace {
+int16_t scrollX = -10;
+unsigned long lastStepMs = 0;
+unsigned long pauseStartMs = 0;
+bool isPaused = false;
+
+uint16_t rgbColor(uint8_t r, uint8_t g, uint8_t b) {
+    return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
 }
 
-void BGDisplayFaceUnicorn::drawUnicorn(int16_t x, int16_t y, uint8_t frame) {
-    _displayManager.drawPixel(x + 6, y + 0, CRGB(255, 215, 0));
-    _displayManager.drawPixel(x + 5, y + 1, CRGB(255, 215, 0));
+uint16_t hsvToRgb(uint8_t hue) {
+    uint8_t region = hue / 43;
+    uint8_t remainder = (hue - (region * 43)) * 6;
+    uint8_t q = 255 - remainder;
+    uint8_t t = remainder;
+    uint8_t r = 0, g = 0, b = 0;
+    switch (region) {
+        case 0: r = 255; g = t;   b = 0;   break;
+        case 1: r = q;   g = 255; b = 0;   break;
+        case 2: r = 0;   g = 255; b = t;   break;
+        case 3: r = 0;   g = q;   b = 255; break;
+        case 4: r = t;   g = 0;   b = 255; break;
+        default: r = 255; g = 0;   b = q;   break;
+    }
+    return rgbColor(r, g, b);
+}
+} // namespace
 
-    _displayManager.drawPixel(x + 4, y + 1, CRGB(255, 20, 147));
-    _displayManager.drawPixel(x + 3, y + 2, CRGB(255, 105, 180));
-    _displayManager.drawPixel(x + 2, y + 3, CRGB(186, 85, 211));
+bool BGDisplayFaceUnicorn::needsFrequentRefresh() const {
+    return true;
+}
 
-    _displayManager.drawPixel(x + 4, y + 2, CRGB::White);
-    _displayManager.drawPixel(x + 6, y + 2, CRGB::White);
-    _displayManager.drawPixel(x + 6, y + 3, CRGB(255, 182, 193));
-    _displayManager.drawPixel(x + 5, y + 2, CRGB(0, 191, 255));
+unsigned long BGDisplayFaceUnicorn::getFrequentRefreshIntervalMs() const {
+    return 40;
+}
 
-    _displayManager.drawPixel(x + 3, y + 3, CRGB::White);
-    _displayManager.drawPixel(x + 4, y + 3, CRGB::White);
-    _displayManager.drawPixel(x + 5, y + 3, CRGB::White);
+void BGDisplayFaceUnicorn::drawUnicorn(int16_t x, int16_t y, uint8_t frame) const {
+    DisplayManager.drawPixel(x + 6, y + 0, rgbColor(255, 215, 0), false);
+    DisplayManager.drawPixel(x + 5, y + 1, rgbColor(255, 215, 0), false);
+    DisplayManager.drawPixel(x + 4, y + 1, rgbColor(255, 20, 147), false);
+    DisplayManager.drawPixel(x + 3, y + 2, rgbColor(255, 105, 180), false);
+    DisplayManager.drawPixel(x + 4, y + 2, COLOR_WHITE, false);
+    DisplayManager.drawPixel(x + 6, y + 2, COLOR_WHITE, false);
+    DisplayManager.drawPixel(x + 6, y + 3, rgbColor(255, 182, 193), false);
+    DisplayManager.drawPixel(x + 5, y + 2, rgbColor(0, 191, 255), false);
+    DisplayManager.drawPixel(x + 3, y + 3, COLOR_WHITE, false);
+    DisplayManager.drawPixel(x + 4, y + 3, COLOR_WHITE, false);
+    DisplayManager.drawPixel(x + 5, y + 3, COLOR_WHITE, false);
+
     for (int8_t bx = 2; bx <= 5; bx++) {
-        _displayManager.drawPixel(x + bx, y + 4, CRGB::White);
-        _displayManager.drawPixel(x + bx, y + 5, CRGB::White);
+        DisplayManager.drawPixel(x + bx, y + 4, COLOR_WHITE, false);
+        DisplayManager.drawPixel(x + bx, y + 5, COLOR_WHITE, false);
     }
 
-    _displayManager.drawPixel(x + 1, y + 4, CRGB(255, 105, 180));
-    _displayManager.drawPixel(x + 0, y + 4, CRGB(255, 215, 0));
-    _displayManager.drawPixel(x + 1, y + 5, CRGB(0, 255, 200));
+    DisplayManager.drawPixel(x + 1, y + 4, rgbColor(255, 105, 180), false);
+    DisplayManager.drawPixel(x + 0, y + 4, rgbColor(255, 215, 0), false);
+    DisplayManager.drawPixel(x + 1, y + 5, rgbColor(0, 255, 200), false);
 
-    CRGB hoof = CRGB(255, 105, 180);
+    uint16_t hoof = rgbColor(255, 105, 180);
     if (frame == 0) {
-        _displayManager.drawPixel(x + 2, y + 6, CRGB::White);
-        _displayManager.drawPixel(x + 1, y + 7, hoof);
-        _displayManager.drawPixel(x + 5, y + 6, CRGB::White);
-        _displayManager.drawPixel(x + 6, y + 7, hoof);
+        DisplayManager.drawPixel(x + 2, y + 6, COLOR_WHITE, false);
+        DisplayManager.drawPixel(x + 1, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 5, y + 6, COLOR_WHITE, false);
+        DisplayManager.drawPixel(x + 6, y + 7, hoof, false);
     } else {
-        _displayManager.drawPixel(x + 3, y + 6, CRGB::White);
-        _displayManager.drawPixel(x + 2, y + 7, hoof);
-        _displayManager.drawPixel(x + 4, y + 6, CRGB::White);
-        _displayManager.drawPixel(x + 5, y + 7, hoof);
+        DisplayManager.drawPixel(x + 3, y + 6, COLOR_WHITE, false);
+        DisplayManager.drawPixel(x + 2, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 4, y + 6, COLOR_WHITE, false);
+        DisplayManager.drawPixel(x + 5, y + 7, hoof, false);
     }
 }
 
-void BGDisplayFaceUnicorn::drawTrail(int16_t startX, int16_t endX) {
+void BGDisplayFaceUnicorn::drawTrail(int16_t startX, int16_t endX) const {
     if (endX < 0 || startX > 31) return;
     int16_t x0 = max((int16_t)0, startX);
     int16_t x1 = min((int16_t)31, endX);
 
     for (int16_t x = x0; x <= x1; x++) {
-        _displayManager.drawPixel(x, 2, CRGB(255, 50, 120));
-        _displayManager.drawPixel(x, 3, CRGB(255, 180, 0));
-        _displayManager.drawPixel(x, 4, CRGB(0, 230, 120));
-        _displayManager.drawPixel(x, 5, CRGB(120, 50, 255));
-        if ((x + _scrollX) % 3 == 0) {
-            _displayManager.drawPixel(x, 1, CRGB::White);
+        DisplayManager.drawPixel(x, 2, rgbColor(255, 50, 120), false);
+        DisplayManager.drawPixel(x, 3, rgbColor(255, 180, 0), false);
+        DisplayManager.drawPixel(x, 4, rgbColor(0, 230, 120), false);
+        DisplayManager.drawPixel(x, 5, rgbColor(120, 50, 255), false);
+        if ((x + scrollX) % 3 == 0) {
+            DisplayManager.drawPixel(x, 1, COLOR_WHITE, false);
         }
     }
 }
 
-void BGDisplayFaceUnicorn::drawRainbowString(int16_t x, int16_t y, const String& text) {
-    int16_t curX = x;
-    for (size_t i = 0; i < text.length(); i++) {
-        uint8_t h = _hue + (i * 30);
-        _displayManager.drawChar(curX, y, text[i], CHSV(h, 220, 255));
-        curX += 4;
-    }
-}
+void BGDisplayFaceUnicorn::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
+    unsigned long now = millis();
+    uint8_t legFrame = (now / 130) % 2;
 
-void BGDisplayFaceUnicorn::update() {
-    uint32_t now = millis();
-    if (now - _lastLegToggle > 130) {
-        _legFrame = !_legFrame;
-        _hue += 6;
-        _lastLegToggle = now;
-    }
-
-    if (_isPaused) {
-        if (now - _pauseStart > 3500) {
-            _isPaused = false;
+    if (isPaused) {
+        if (now - pauseStartMs > 3500) {
+            isPaused = false;
         }
-        return;
+    } else if (now - lastStepMs > 40) {
+        scrollX++;
+        if (scrollX - 21 == 4) {
+            isPaused = true;
+            pauseStartMs = now;
+        }
+        if (scrollX > (32 + 55)) {
+            scrollX = -10;
+        }
+        lastStepMs = now;
     }
 
-    if (now - _lastStep > 40) {
-        _scrollX++;
-        if (_scrollX - 21 == 4) {
-            _isPaused = true;
-            _pauseStart = now;
-        }
-        if (_scrollX > (32 + 55)) {
-            _scrollX = -10;
-        }
-        _lastStep = now;
-    }
-}
+    DisplayManager.clearMatrix(false);
 
-void BGDisplayFaceUnicorn::render() {
-    _displayManager.clear();
-    BGReading r = bgSourceManager.getLatestReading();
-    String valStr = String(r.value);
-    String deltaStr = (r.delta >= 0 ? "+" : "") + String(r.delta);
-
-    int16_t unicornX = _scrollX;
+    auto lastReading = readings.back();
+    String valStr = getPrintableReading(lastReading.sgv);
+    int16_t unicornX = scrollX;
     int16_t bgX = unicornX - 21;
-    int16_t arrowX = bgX + (valStr.length() * 4) + 1;
-    int16_t deltaX = arrowX + 6;
-
-    bool headingToTarget = (r.value > 180 && r.delta < 0) || (r.value < 70 && r.delta > 0) || (r.value >= 70 && r.value <= 180);
-    CRGB deltaColor = headingToTarget ? CRGB::SpringGreen : CRGB(255, 140, 0);
+    int16_t arrowX = bgX + DisplayManager.getTextWidth(valStr.c_str(), 2) + 2;
 
     drawTrail(unicornX - 8, unicornX - 1);
-    drawUnicorn(unicornX, 0, _legFrame);
-    drawRainbowString(bgX, 1, valStr);
-    _displayManager.drawTrendArrow(arrowX, 1, r.trend, CHSV(_hue + 160, 240, 255));
-    _displayManager.drawString(deltaX, 1, deltaStr, deltaColor);
+    drawUnicorn(unicornX, 0, legFrame);
+
+    DisplayManager.setFont(FONT_TYPE::MEDIUM);
+    uint8_t hue = (now / 20) % 255;
+    for (size_t i = 0; i < valStr.length(); i++) {
+        char buf[2] = {valStr[i], '\0'};
+        uint16_t color = dataIsOld ? (uint16_t)COLOR_GRAY : hsvToRgb(hue + (i * 35));
+        DisplayManager.setTextColor(color);
+        DisplayManager.printText(bgX, 6, buf, TEXT_ALIGNMENT::LEFT, 2, false);
+        bgX += DisplayManager.getTextWidth(buf, 2);
+    }
+
+    showTrendArrow(lastReading, arrowX, 1, dataIsOld, false, false);
+    DisplayManager.update();
 }

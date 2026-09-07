@@ -1,23 +1,17 @@
-#pragma once
+#ifndef BGDISPLAYFACEUNICORN_H
+#define BGDISPLAYFACEUNICORN_H
 
-#include "BGDisplayFace.h"
+#include "BGDisplayFaceTextBase.h"
 
-class BGDisplayFaceUnicorn : public BGDisplayFace {
+class BGDisplayFaceUnicorn : public BGDisplayFaceTextBase {
 public:
-    explicit BGDisplayFaceUnicorn(DisplayManager& displayManager);
-    void update() override;
-    void render() override;
+    void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
+    bool needsFrequentRefresh() const override;
+    unsigned long getFrequentRefreshIntervalMs() const override;
 
 private:
-    int16_t _scrollX = -10;
-    uint32_t _lastStep = 0;
-    uint32_t _lastLegToggle = 0;
-    uint32_t _pauseStart = 0;
-    uint8_t _legFrame = 0;
-    uint8_t _hue = 0;
-    bool _isPaused = false;
-
-    void drawUnicorn(int16_t x, int16_t y, uint8_t frame);
-    void drawTrail(int16_t startX, int16_t endX);
-    void drawRainbowString(int16_t x, int16_t y, const String& text);
+    void drawUnicorn(int16_t x, int16_t y, uint8_t frame) const;
+    void drawTrail(int16_t startX, int16_t endX) const;
 };
+
+#endif

@@ -1,19 +1,17 @@
-#pragma once
+#ifndef BGDISPLAYFACEDIAGNOSTICS_H
+#define BGDISPLAYFACEDIAGNOSTICS_H
 
 #include "BGDisplayFace.h"
 
 class BGDisplayFaceDiagnostics : public BGDisplayFace {
 public:
-    explicit BGDisplayFaceDiagnostics(DisplayManager& displayManager);
-    void update() override;
-    void render() override;
+    void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
+    void showNoData() const override;
+    bool needsFrequentRefresh() const override;
+    unsigned long getFrequentRefreshIntervalMs() const override;
 
 private:
-    int16_t _scrollX = 32;
-    uint32_t _lastScrollMs = 0;
-    uint32_t _lastRefreshMs = 0;
-    String _text;
-    CRGB _textColor = CRGB::DeepSkyBlue;
-
-    void refreshDiagnosticText();
+    void showDiagnosticsTicker(const std::list<GlucoseReading>& readings) const;
 };
+
+#endif

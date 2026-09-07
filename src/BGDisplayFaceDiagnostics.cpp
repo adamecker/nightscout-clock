@@ -1,54 +1,77 @@
 #include "BGDisplayFaceDiagnostics.h"
-#include "BGSourceManager.h"
-#include "PeripheryManager.h"
 #include "globals.h"
 #include <WiFi.h>
 
-BGDisplayFaceDiagnostics::BGDisplayFaceDiagnostics(DisplayManager& displayManager)
-    : BGDisplayFace(displayManager) {
-    refreshDiagnosticText();
-}
+namespace {
+int16_t scrollX = 32;
+unsigned long lastScrollMs = 0;
+unsigned long lastRefreshMs = 0;
+String cachedText = "";
+uint16_t textColor = COLOR_CYAN;
 
-void BGDisplayFaceDiagnostics::refreshDiagnosticText() {
+void updateDiagnosticText(const std::list<GlucoseReading>& readings) {
     int rssi = WiFi.RSSI();
     String wifiStr = WiFi.isConnected() ? (String(rssi) + "dBm") : "OFFLINE";
 
-    BGReading latest = bgSourceManager.getLatestReading();
-    uint32_t ageMin = (latest.timestampMs > 0) ? (millis() - latest.timestampMs) / 60000 : 0;
-    float batV = peripheryManager.getBatteryVoltage();
+    int ageMin = 0;
+    int sgvVal = 0;
+    if (!readings.empty()) {
+        ageMin = readings.back().getSecondsAgo() / 60;
+        sgvVal = readings.back().sgv;
+    }
+    
     uint32_t freeHeap = ESP.getFreeHeap() / 1024;
 
-    _text = "WIFI: " + wifiStr +
-            " | VAL: " + String(latest.value) +
-            " | AGE: " + String(ageMin) + "m" +
-            " | BAT: " + String(batV, 2) + "V" +
-            " | RAM: " + String(freeHeap) + "KB ";
+    cachedText = "WIFI: " + wifiStr +
+                 " | VAL: " + String(sgvVal) +
+                 " | AGE: " + String(ageMin) + "m" +
+                 " | BAT: " + String(BATTERY_PERCENT) + "%" +
+                 " | RAM: " + String(freeHeap) + "KB ";
 
     if (!WiFi.isConnected() || ageMin > 15) {
-        _textColor = CRGB::OrangeRed;
+        textColor = COLOR_RED;
     } else {
-        _textColor = CRGB::DeepSkyBlue;
+        textColor = COLOR_CYAN;
     }
 }
+} // namespace
 
-void BGDisplayFaceDiagnostics::update() {
-    uint32_t now = millis();
-    if (now - _lastRefreshMs > 5000 || _text.length() == 0) {
-        refreshDiagnosticText();
-        _lastRefreshMs = now;
+void BGDisplayFaceDiagnostics::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
+    showDiagnosticsTicker(readings);
+}
+
+void BGDisplayFaceDiagnostics::showNoData() const {
+    std::list<GlucoseReading> empty;
+    showDiagnosticsTicker(empty);
+}
+
+bool BGDisplayFaceDiagnostics::needsFrequentRefresh() const {
+    return true;
+}
+
+unsigned long BGDisplayFaceDiagnostics::getFrequentRefreshIntervalMs() const {
+    return 40;
+}
+
+void BGDisplayFaceDiagnostics::showDiagnosticsTicker(const std::list<GlucoseReading>& readings) const {
+    unsigned long now = millis();
+    if (now - lastRefreshMs > 5000 || cachedText.length() == 0) {
+        updateDiagnosticText(readings);
+        lastRefreshMs = now;
     }
 
-    if (now - _lastScrollMs > 40) {
-        _scrollX--;
-        int16_t totalWidth = (int16_t)(_text.length() * 6);
-        if (_scrollX < -totalWidth) {
-            _scrollX = 32;
+    if (now - lastScrollMs > 40) {
+        scrollX--;
+        int textWidth = DisplayManager.getTextWidth(cachedText.c_str(), 2);
+        if (scrollX < -textWidth) {
+            scrollX = 32;
         }
-        _lastScrollMs = now;
+        lastScrollMs = now;
     }
-}
 
-void BGDisplayFaceDiagnostics::render() {
-    _displayManager.clear();
-    _displayManager.drawString(_scrollX, 1, _text, _textColor);
+    DisplayManager.clearMatrix(false);
+    DisplayManager.setFont(FONT_TYPE::SMALL);
+    DisplayManager.setTextColor(textColor);
+    DisplayManager.printText(scrollX, 6, cachedText.c_str(), TEXT_ALIGNMENT::LEFT, 2, false);
+    DisplayManager.update();
 }

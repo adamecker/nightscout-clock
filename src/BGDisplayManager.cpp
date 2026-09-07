@@ -56,6 +56,12 @@ void BGDisplayManager_::setup() {
     facesNames[8] = "Rainbow big text";
     faces.push_back(new BGDisplayFaceSmiley());
     facesNames[9] = "Smiley";
+    faces.push_back(new BGDisplayFaceRainbowSparkle());
+    facesNames[10] = "Rainbow sparkle";
+    faces.push_back(new BGDisplayFaceSmileyPlusStats());
+    facesNames[11] = "Smiley stats";
+    faces.push_back(new BGDisplayFaceUnicorn());
+    facesNames[12] = "Rainbow unicorn";
 
     configureFaceCycle();
 
