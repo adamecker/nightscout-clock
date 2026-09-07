@@ -9,6 +9,7 @@ public:
     void showNoData() const override;
     bool needsFrequentRefresh() const override;
     unsigned long getFrequentRefreshIntervalMs() const override;
+    void onActivate() const override;
 
 private:
     void showDiagnosticsTicker(const std::list<GlucoseReading>& readings) const;

@@ -88,6 +88,7 @@ private:
     unsigned long lastFaceCycleMillis = 0;
     std::vector<int> faceCycleFaces;
     unsigned long long lastRefreshEpoch = 0;
+    unsigned long lastFrequentRefreshMillis = 0;
 
     void configureFaceCycle();
     void updateFaceCycle();

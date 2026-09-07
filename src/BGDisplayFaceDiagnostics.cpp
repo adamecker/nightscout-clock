@@ -36,6 +36,13 @@ void updateDiagnosticText(const std::list<GlucoseReading>& readings) {
 }
 } // namespace
 
+void BGDisplayFaceDiagnostics::onActivate() const {
+    scrollX = 32;
+    lastScrollMs = 0;
+    lastRefreshMs = 0;
+    cachedText = "";
+}
+
 void BGDisplayFaceDiagnostics::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     showDiagnosticsTicker(readings);
 }
@@ -73,5 +80,4 @@ void BGDisplayFaceDiagnostics::showDiagnosticsTicker(const std::list<GlucoseRead
     DisplayManager.setFont(FONT_TYPE::SMALL);
     DisplayManager.setTextColor(textColor);
     DisplayManager.printText(scrollX, 6, cachedText.c_str(), TEXT_ALIGNMENT::LEFT, 2, false);
-    DisplayManager.update();
 }

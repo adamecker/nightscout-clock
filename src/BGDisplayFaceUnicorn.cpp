@@ -3,10 +3,10 @@
 #include "globals.h"
 
 namespace {
-int16_t scrollX = -10;
-unsigned long lastStepMs = 0;
-unsigned long pauseStartMs = 0;
-bool isPaused = false;
+int16_t unicornScrollX = -8;
+unsigned long unicornLastStepMs = 0;
+unsigned long unicornPauseStartMs = 0;
+bool unicornIsPaused = false;
 
 uint16_t rgbColor(uint8_t r, uint8_t g, uint8_t b) {
     return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
@@ -29,6 +29,13 @@ uint16_t hsvToRgb(uint8_t hue) {
     return rgbColor(r, g, b);
 }
 } // namespace
+
+void BGDisplayFaceUnicorn::onActivate() const {
+    unicornScrollX = -8;
+    unicornLastStepMs = 0;
+    unicornPauseStartMs = 0;
+    unicornIsPaused = false;
+}
 
 bool BGDisplayFaceUnicorn::needsFrequentRefresh() const {
     return true;
@@ -84,7 +91,7 @@ void BGDisplayFaceUnicorn::drawTrail(int16_t startX, int16_t endX) const {
         DisplayManager.drawPixel(x, 3, rgbColor(255, 180, 0), false);
         DisplayManager.drawPixel(x, 4, rgbColor(0, 230, 120), false);
         DisplayManager.drawPixel(x, 5, rgbColor(120, 50, 255), false);
-        if ((x + scrollX) % 3 == 0) {
+        if ((x + unicornScrollX) % 3 == 0) {
             DisplayManager.drawPixel(x, 1, COLOR_WHITE, false);
         }
     }
@@ -94,43 +101,47 @@ void BGDisplayFaceUnicorn::showReadings(const std::list<GlucoseReading>& reading
     unsigned long now = millis();
     uint8_t legFrame = (now / 130) % 2;
 
-    if (isPaused) {
-        if (now - pauseStartMs > 3500) {
-            isPaused = false;
-        }
-    } else if (now - lastStepMs > 40) {
-        scrollX++;
-        if (scrollX - 21 == 4) {
-            isPaused = true;
-            pauseStartMs = now;
-        }
-        if (scrollX > (32 + 55)) {
-            scrollX = -10;
-        }
-        lastStepMs = now;
-    }
-
-    DisplayManager.clearMatrix(false);
-
     auto lastReading = readings.back();
     String valStr = getPrintableReading(lastReading.sgv);
-    int16_t unicornX = scrollX;
-    int16_t bgX = unicornX - 21;
-    int16_t arrowX = bgX + DisplayManager.getTextWidth(valStr.c_str(), 2) + 2;
+    int valWidth = DisplayManager.getTextWidth(valStr.c_str(), 2);
 
-    drawTrail(unicornX - 8, unicornX - 1);
-    drawUnicorn(unicornX, 0, legFrame);
+    // Pause with unicorn positioned on the right while reading + arrow are centered
+    if (unicornIsPaused) {
+        if (now - unicornPauseStartMs > 3500) {
+            unicornIsPaused = false;
+        }
+    } else if (now - unicornLastStepMs > 40) {
+        unicornScrollX++;
+        if (unicornScrollX == 24) {
+            unicornIsPaused = true;
+            unicornPauseStartMs = now;
+        }
+        if (unicornScrollX > (32 + valWidth + 16)) {
+            unicornScrollX = -8;
+        }
+        unicornLastStepMs = now;
+    }
+
+    int16_t ux = unicornScrollX;
+    int16_t trailEnd = ux - 1;
+    int16_t trailStart = ux - 6;
+    int16_t bgX = trailStart - valWidth - 2;
+    int16_t arrowX = bgX + valWidth + 1;
+
+    // Draw trail, unicorn, and trailing rainbow digits
+    drawTrail(trailStart, trailEnd);
+    drawUnicorn(ux, 0, legFrame);
 
     DisplayManager.setFont(FONT_TYPE::MEDIUM);
     uint8_t hue = (now / 20) % 255;
+    int16_t curX = bgX;
     for (size_t i = 0; i < valStr.length(); i++) {
         char buf[2] = {valStr[i], '\0'};
         uint16_t color = dataIsOld ? (uint16_t)COLOR_GRAY : hsvToRgb(hue + (i * 35));
         DisplayManager.setTextColor(color);
-        DisplayManager.printText(bgX, 6, buf, TEXT_ALIGNMENT::LEFT, 2, false);
-        bgX += DisplayManager.getTextWidth(buf, 2);
+        DisplayManager.printText(curX, 6, buf, TEXT_ALIGNMENT::LEFT, 2, false);
+        curX += DisplayManager.getTextWidth(buf, 2);
     }
 
     showTrendArrow(lastReading, arrowX, 1, dataIsOld, false, false);
-    DisplayManager.update();
 }

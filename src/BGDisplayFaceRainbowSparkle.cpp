@@ -4,47 +4,23 @@
 
 namespace {
 const uint8_t PROGMEM SPARKLE_HAPPY_A[] = {
-    0b00111100,
-    0b01000010,
-    0b10100101,
-    0b10000001,
-    0b10100101,
-    0b10011001,
-    0b01000010,
-    0b00111100
+    0b00111100, 0b01000010, 0b10100101, 0b10000001,
+    0b10100101, 0b10011001, 0b01000010, 0b00111100
 };
 
 const uint8_t PROGMEM SPARKLE_HAPPY_B[] = {
-    0b00111100,
-    0b01000010,
-    0b10100101,
-    0b10000001,
-    0b10000001,
-    0b10111101,
-    0b01000010,
-    0b00111100
+    0b00111100, 0b01000010, 0b10100101, 0b10000001,
+    0b10000001, 0b10111101, 0b01000010, 0b00111100
 };
 
 const uint8_t PROGMEM SPARKLE_SHOCKED[] = {
-    0b00111100,
-    0b01000010,
-    0b10100101,
-    0b10100101,
-    0b10000001,
-    0b10011001,
-    0b10011001,
-    0b00111100
+    0b00111100, 0b01000010, 0b10100101, 0b10100101,
+    0b10000001, 0b10011001, 0b10011001, 0b00111100
 };
 
 const uint8_t PROGMEM SPARKLE_DIZZY[] = {
-    0b00111100,
-    0b01000010,
-    0b10011001,
-    0b00100100,
-    0b10000001,
-    0b01011010,
-    0b01000010,
-    0b00111100
+    0b00111100, 0b01000010, 0b10011001, 0b00100100,
+    0b10000001, 0b01011010, 0b01000010, 0b00111100
 };
 
 uint16_t hsvToRgb565(uint8_t hue) {
@@ -65,11 +41,12 @@ uint16_t hsvToRgb565(uint8_t hue) {
 }
 } // namespace
 
+void BGDisplayFaceRainbowSparkle::onActivate() const {}
+
 void BGDisplayFaceRainbowSparkle::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     auto lastReading = readings.back();
     showAnimatedReading(lastReading, dataIsOld);
     showTrendArrow(lastReading, MATRIX_WIDTH - 5, 1, dataIsOld, false, false);
-    DisplayManager.update();
 }
 
 bool BGDisplayFaceRainbowSparkle::needsFrequentRefresh() const {
@@ -81,8 +58,6 @@ unsigned long BGDisplayFaceRainbowSparkle::getFrequentRefreshIntervalMs() const 
 }
 
 void BGDisplayFaceRainbowSparkle::showAnimatedReading(const GlucoseReading& reading, bool dataIsOld) const {
-    DisplayManager.clearMatrix(false);
-
     auto bgLevel = bgDisplayManager.getGlucoseIntervals().getBGLevel(reading.sgv);
     bool isFallingFast = (reading.trend == BG_TREND::DOUBLE_DOWN || reading.trend == BG_TREND::SINGLE_DOWN);
 
@@ -94,7 +69,7 @@ void BGDisplayFaceRainbowSparkle::showAnimatedReading(const GlucoseReading& read
         faceColor = COLOR_YELLOW;
     } else if (bgLevel == BG_LEVEL::URGENT_HIGH || bgLevel == BG_LEVEL::WARNING_HIGH) {
         faceBmp = SPARKLE_DIZZY;
-        faceColor = 0xF81F;
+        faceColor = 0xF81F; // Magenta
     } else if (bgLevel == BG_LEVEL::URGENT_LOW || bgLevel == BG_LEVEL::WARNING_LOW) {
         faceBmp = SPARKLE_SHOCKED;
         faceColor = COLOR_RED;
