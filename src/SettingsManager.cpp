@@ -205,8 +205,17 @@ bool SettingsManager_::loadSettingsFromFile() {
 
     settings.face_cycle_enabled = (*doc)["face_cycle_enabled"] | false;
     settings.face_cycle_interval_seconds = (*doc)["face_cycle_interval_seconds"] | 60;
+    settings.school_mode_active = doc["school_mode_active"] | false;
+    if (doc["school_mode_faces"].is<JsonArray>()) {
+        settings.school_mode_faces.clear();
+        for (int f : doc["school_mode_faces"].as<JsonArray>()) settings.school_mode_faces.push_back(f);
+    }
+    if (settings.school_mode_faces.empty()) settings.school_mode_faces = {0, 1, 2, 4, 5, 9};
     if (!isValidFaceCycleInterval(settings.face_cycle_interval_seconds)) {
         DEBUG_PRINTLN("Invalid face cycle interval in config, defaulting to 60 seconds");
+    doc["school_mode_active"] = settings.school_mode_active;
+    JsonArray smFaces = doc["school_mode_faces"].to<JsonArray>();
+    for (int f : settings.school_mode_faces) smFaces.add(f);
         settings.face_cycle_interval_seconds = 60;
     }
 

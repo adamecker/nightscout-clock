@@ -22,6 +22,8 @@ public:
     int default_clockface;
     bool face_cycle_enabled = false;
     std::vector<int> face_cycle_faces;
+    bool school_mode_active = false;
+    std::vector<int> school_mode_faces = {0, 1, 2, 4, 5, 9};
     int face_cycle_interval_seconds = 60;
     BG_SOURCE bg_source;
     String dexcom_username;

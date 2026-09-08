@@ -12,7 +12,7 @@ public:
 
 private:
     void drawUnicorn(int16_t x, int16_t y, uint8_t frame) const;
-    void drawTrail(int16_t startX, int16_t endX) const;
+    void drawNyanRainbow(int16_t startX, int16_t endX, uint8_t waveTick) const;
 };
 
 #endif
