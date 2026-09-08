@@ -1,3 +1,4 @@
+#include "BGDisplayManager.h"
 #include <ArduinoJson.h>
 #include <BGAlarmManager.h>
 #include <LightDependentResistor.h>
@@ -137,6 +138,7 @@ void PeripheryManager_::setup() {
     button_select.setLongClickTime(1000);
     button_select.setLongClickHandler(select_button_pressed_long);
     button_select.setDoubleClickTime(500);
+    button_select.setTripleClickHandler([](Button2& b) { bgDisplayManager.toggleSchoolMode(); });
     button_select.setDoubleClickHandler(select_button_double);
 
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);

@@ -3,47 +3,27 @@
 #include "globals.h"
 
 namespace {
-int16_t unicornScrollX = -8;
-unsigned long unicornLastStepMs = 0;
-unsigned long unicornPauseStartMs = 0;
-bool unicornIsPaused = false;
+int16_t uScrollX = -12;
+unsigned long uLastStepMs = 0, uPauseStartMs = 0;
+bool uIsPaused = false;
 
-uint16_t rgbColor(uint8_t r, uint8_t g, uint8_t b) {
-    return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
-}
-
+uint16_t rgbColor(uint8_t r, uint8_t g, uint8_t b) { return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3); }
 uint16_t hsvToRgb(uint8_t hue) {
-    uint8_t region = hue / 43;
-    uint8_t remainder = (hue - (region * 43)) * 6;
-    uint8_t q = 255 - remainder;
-    uint8_t t = remainder;
-    uint8_t r = 0, g = 0, b = 0;
+    uint8_t region = hue / 43, rem = (hue - (region * 43)) * 6, q = 255 - rem, t = rem;
     switch (region) {
-        case 0: r = 255; g = t;   b = 0;   break;
-        case 1: r = q;   g = 255; b = 0;   break;
-        case 2: r = 0;   g = 255; b = t;   break;
-        case 3: r = 0;   g = q;   b = 255; break;
-        case 4: r = t;   g = 0;   b = 255; break;
-        default: r = 255; g = 0;   b = q;   break;
+        case 0: return rgbColor(255, t, 0);
+        case 1: return rgbColor(q, 255, 0);
+        case 2: return rgbColor(0, 255, t);
+        case 3: return rgbColor(0, q, 255);
+        case 4: return rgbColor(t, 0, 255);
+        default: return rgbColor(255, 0, q);
     }
-    return rgbColor(r, g, b);
 }
-} // namespace
-
-void BGDisplayFaceUnicorn::onActivate() const {
-    unicornScrollX = -8;
-    unicornLastStepMs = 0;
-    unicornPauseStartMs = 0;
-    unicornIsPaused = false;
 }
 
-bool BGDisplayFaceUnicorn::needsFrequentRefresh() const {
-    return true;
-}
-
-unsigned long BGDisplayFaceUnicorn::getFrequentRefreshIntervalMs() const {
-    return 40;
-}
+void BGDisplayFaceUnicorn::onActivate() const { uScrollX = -12; uLastStepMs = 0; uPauseStartMs = 0; uIsPaused = false; }
+bool BGDisplayFaceUnicorn::needsFrequentRefresh() const { return true; }
+unsigned long BGDisplayFaceUnicorn::getFrequentRefreshIntervalMs() const { return 35; }
 
 void BGDisplayFaceUnicorn::drawUnicorn(int16_t x, int16_t y, uint8_t frame) const {
     DisplayManager.drawPixel(x + 6, y + 0, rgbColor(255, 215, 0), false);
@@ -57,91 +37,61 @@ void BGDisplayFaceUnicorn::drawUnicorn(int16_t x, int16_t y, uint8_t frame) cons
     DisplayManager.drawPixel(x + 3, y + 3, COLOR_WHITE, false);
     DisplayManager.drawPixel(x + 4, y + 3, COLOR_WHITE, false);
     DisplayManager.drawPixel(x + 5, y + 3, COLOR_WHITE, false);
-
     for (int8_t bx = 2; bx <= 5; bx++) {
         DisplayManager.drawPixel(x + bx, y + 4, COLOR_WHITE, false);
         DisplayManager.drawPixel(x + bx, y + 5, COLOR_WHITE, false);
     }
-
-    DisplayManager.drawPixel(x + 1, y + 4, rgbColor(255, 105, 180), false);
-    DisplayManager.drawPixel(x + 0, y + 4, rgbColor(255, 215, 0), false);
-    DisplayManager.drawPixel(x + 1, y + 5, rgbColor(0, 255, 200), false);
-
     uint16_t hoof = rgbColor(255, 105, 180);
     if (frame == 0) {
-        DisplayManager.drawPixel(x + 2, y + 6, COLOR_WHITE, false);
-        DisplayManager.drawPixel(x + 1, y + 7, hoof, false);
-        DisplayManager.drawPixel(x + 5, y + 6, COLOR_WHITE, false);
-        DisplayManager.drawPixel(x + 6, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 2, y + 6, COLOR_WHITE, false); DisplayManager.drawPixel(x + 1, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 5, y + 6, COLOR_WHITE, false); DisplayManager.drawPixel(x + 6, y + 7, hoof, false);
     } else {
-        DisplayManager.drawPixel(x + 3, y + 6, COLOR_WHITE, false);
-        DisplayManager.drawPixel(x + 2, y + 7, hoof, false);
-        DisplayManager.drawPixel(x + 4, y + 6, COLOR_WHITE, false);
-        DisplayManager.drawPixel(x + 5, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 3, y + 6, COLOR_WHITE, false); DisplayManager.drawPixel(x + 2, y + 7, hoof, false);
+        DisplayManager.drawPixel(x + 4, y + 6, COLOR_WHITE, false); DisplayManager.drawPixel(x + 5, y + 7, hoof, false);
     }
 }
 
-void BGDisplayFaceUnicorn::drawTrail(int16_t startX, int16_t endX) const {
+void BGDisplayFaceUnicorn::drawNyanRainbow(int16_t startX, int16_t endX, uint8_t waveTick) const {
     if (endX < 0 || startX > 31) return;
-    int16_t x0 = max((int16_t)0, startX);
-    int16_t x1 = min((int16_t)31, endX);
-
+    int16_t x0 = max((int16_t)0, startX), x1 = min((int16_t)31, endX);
+    const uint16_t nyan[5] = { rgbColor(255, 0, 55), rgbColor(255, 140, 0), rgbColor(255, 235, 0), rgbColor(0, 255, 60), rgbColor(160, 40, 255) };
     for (int16_t x = x0; x <= x1; x++) {
-        DisplayManager.drawPixel(x, 2, rgbColor(255, 50, 120), false);
-        DisplayManager.drawPixel(x, 3, rgbColor(255, 180, 0), false);
-        DisplayManager.drawPixel(x, 4, rgbColor(0, 230, 120), false);
-        DisplayManager.drawPixel(x, 5, rgbColor(120, 50, 255), false);
-        if ((x + unicornScrollX) % 3 == 0) {
-            DisplayManager.drawPixel(x, 1, COLOR_WHITE, false);
-        }
+        int seg = ((x / 2) + waveTick) % 2;
+        int yBase = (seg == 0) ? 1 : 2;
+        for (int b = 0; b < 5; b++) DisplayManager.drawPixel(x, yBase + b, nyan[b], false);
+        if ((x + waveTick) % 5 == 0) DisplayManager.drawPixel(x, (seg == 0 ? 7 : 0), COLOR_WHITE, false);
     }
 }
 
 void BGDisplayFaceUnicorn::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     unsigned long now = millis();
-    uint8_t legFrame = (now / 130) % 2;
-
+    uint8_t leg = (now / 110) % 2, wave = (now / 110) % 4;
     auto lastReading = readings.back();
     String valStr = getPrintableReading(lastReading.sgv);
     int valWidth = DisplayManager.getTextWidth(valStr.c_str(), 2);
 
-    // Pause with unicorn positioned on the right while reading + arrow are centered
-    if (unicornIsPaused) {
-        if (now - unicornPauseStartMs > 3500) {
-            unicornIsPaused = false;
-        }
-    } else if (now - unicornLastStepMs > 40) {
-        unicornScrollX++;
-        if (unicornScrollX == 24) {
-            unicornIsPaused = true;
-            unicornPauseStartMs = now;
-        }
-        if (unicornScrollX > (32 + valWidth + 16)) {
-            unicornScrollX = -8;
-        }
-        unicornLastStepMs = now;
+    if (uIsPaused) {
+        if (now - uPauseStartMs > 3500) uIsPaused = false;
+    } else if (now - uLastStepMs > 35) {
+        uScrollX++;
+        if (uScrollX == 24) { uIsPaused = true; uPauseStartMs = now; }
+        if (uScrollX > (32 + valWidth + 18)) uScrollX = -10;
+        uLastStepMs = now;
     }
 
-    int16_t ux = unicornScrollX;
-    int16_t trailEnd = ux - 1;
-    int16_t trailStart = ux - 6;
-    int16_t bgX = trailStart - valWidth - 2;
-    int16_t arrowX = bgX + valWidth + 1;
-
-    // Draw trail, unicorn, and trailing rainbow digits
-    drawTrail(trailStart, trailEnd);
-    drawUnicorn(ux, 0, legFrame);
+    int16_t ux = uScrollX, tEnd = ux + 1, tStart = ux - 10, bgX = tStart - valWidth - 2, arrX = bgX + valWidth + 1;
+    drawNyanRainbow(tStart, tEnd, wave);
+    drawUnicorn(ux, 0, leg);
 
     DisplayManager.setFont(FONT_TYPE::MEDIUM);
-    uint8_t hue = (now / 20) % 255;
+    uint8_t hue = (now / 15) % 255;
     int16_t curX = bgX;
     for (size_t i = 0; i < valStr.length(); i++) {
         char buf[2] = {valStr[i], '\0'};
-        uint16_t color = dataIsOld ? (uint16_t)COLOR_GRAY : hsvToRgb(hue + (i * 35));
-        DisplayManager.setTextColor(color);
+        uint16_t col = dataIsOld ? (uint16_t)COLOR_GRAY : hsvToRgb(hue + (i * 35));
+        DisplayManager.setTextColor(col);
         DisplayManager.printText(curX, 6, buf, TEXT_ALIGNMENT::LEFT, 2, false);
         curX += DisplayManager.getTextWidth(buf, 2);
     }
-
-    showTrendArrow(lastReading, arrowX, 1, dataIsOld, false, false);
+    showTrendArrow(lastReading, arrX, 1, dataIsOld, false, false);
 }

@@ -20,6 +20,7 @@
 #include "BGDisplayFaceRainbowSparkle.h"
 #include "BGDisplayFaceSmileyPlusStats.h"
 #include "BGDisplayFaceUnicorn.h"
+#include "BGDisplayFaceTitleScroll.h"
 #include "BGDisplayFaceValueAndDiff.h"
 #include "BGSource.h"
 
@@ -111,6 +112,9 @@ public:
     void setFace(int id);
     void showNextFace();
     void showPreviousFace();
+    void toggleSchoolMode();
+    bool isSchoolMode() const;
+    void setSchoolMode(bool active);
 
     static void drawTimerBlocks(GlucoseReading lastReading, int width, int xPosition, int yPosition);
 };

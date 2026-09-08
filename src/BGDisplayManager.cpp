@@ -62,6 +62,8 @@ void BGDisplayManager_::setup() {
     facesNames[11] = "Smiley stats";
     faces.push_back(new BGDisplayFaceUnicorn());
     facesNames[12] = "Rainbow unicorn";
+    faces.push_back(new BGDisplayFaceTitleScroll());
+    facesNames[13] = "Custom title scroll";
 
     configureFaceCycle();
 
@@ -128,41 +130,32 @@ void BGDisplayManager_::setFace(int id) {
 }
 
 void BGDisplayManager_::showNextFace() {
-    if (!faceCycleActive) {
-        int nextFaceIndex = currentFaceIndex + 1;
-        if (static_cast<size_t>(nextFaceIndex) >= faces.size()) {
-            nextFaceIndex = 0;
+    std::vector<int> list;
+    if (SettingsManager.settings.school_mode_active) {
+        auto& allowed = SettingsManager.settings.school_mode_faces;
+        if (faceCycleActive) {
+            for (int f : faceCycleFaces) if (std::find(allowed.begin(), allowed.end(), f) != allowed.end()) list.push_back(f);
         }
-        setFace(nextFaceIndex);
-        return;
-    }
-
-    auto current = std::find(faceCycleFaces.begin(), faceCycleFaces.end(), currentFaceIndex);
-    if (current == faceCycleFaces.end()) {
-        setFace(faceCycleFaces.front());
-        return;
-    }
-
-    current++;
-    setFace(current == faceCycleFaces.end() ? faceCycleFaces.front() : *current);
+        if (list.empty()) list = allowed;
+    } else if (faceCycleActive) { list = faceCycleFaces; }
+    else { for (size_t i = 0; i < faces.size(); i++) list.push_back(i); }
+    if (list.empty()) return;
+    auto cur = std::find(list.begin(), list.end(), currentFaceIndex);
+    setFace(cur == list.end() ? list.front() : ((cur + 1 == list.end()) ? list.front() : *(cur + 1)));
 }
-
 void BGDisplayManager_::showPreviousFace() {
-    if (!faceCycleActive) {
-        int previousFaceIndex = currentFaceIndex - 1;
-        if (previousFaceIndex < 0) {
-            previousFaceIndex = static_cast<int>(faces.size()) - 1;
+    std::vector<int> list;
+    if (SettingsManager.settings.school_mode_active) {
+        auto& allowed = SettingsManager.settings.school_mode_faces;
+        if (faceCycleActive) {
+            for (int f : faceCycleFaces) if (std::find(allowed.begin(), allowed.end(), f) != allowed.end()) list.push_back(f);
         }
-        setFace(previousFaceIndex);
-        return;
-    }
-
-    auto current = std::find(faceCycleFaces.begin(), faceCycleFaces.end(), currentFaceIndex);
-    if (current == faceCycleFaces.end() || current == faceCycleFaces.begin()) {
-        setFace(faceCycleFaces.back());
-    } else {
-        setFace(*--current);
-    }
+        if (list.empty()) list = allowed;
+    } else if (faceCycleActive) { list = faceCycleFaces; }
+    else { for (size_t i = 0; i < faces.size(); i++) list.push_back(i); }
+    if (list.empty()) return;
+    auto cur = std::find(list.begin(), list.end(), currentFaceIndex);
+    setFace((cur == list.end() || cur == list.begin()) ? list.back() : *(cur - 1));
 }
 
 void BGDisplayManager_::resetFaceCycleTimer() {
@@ -225,7 +218,7 @@ void BGDisplayManager_::runRenderCycle(RenderReason reason, const tm& timeInfo) 
             commitRenderedState(dataIsOld);
             return;
         case RenderDecision::FULL:
-            DisplayManager.clearMatrix();
+            DisplayManager.clearMatrix(false);
             if (displayedReadings.size() > 0) {
                 currentFace->showReadings(displayedReadings, dataIsOld);
             } else {
@@ -276,4 +269,24 @@ GlucoseReading* BGDisplayManager_::getLastDisplayedGlucoseReading() {
     } else {
         return NULL;
     }
+}
+bool BGDisplayManager_::isSchoolMode() const { return SettingsManager.settings.school_mode_active; }
+void BGDisplayManager_::toggleSchoolMode() { setSchoolMode(!SettingsManager.settings.school_mode_active); }
+void BGDisplayManager_::setSchoolMode(bool active) {
+    SettingsManager.settings.school_mode_active = active;
+    SettingsManager.saveSettingsToFile();
+    DisplayManager.clearMatrix(false);
+    DisplayManager.setFont(FONT_TYPE::SMALL);
+    DisplayManager.setTextColor(active ? COLOR_YELLOW : COLOR_GREEN);
+    DisplayManager.printText(0, 6, active ? "SCHOOL" : "HOME", TEXT_ALIGNMENT::CENTER, 0, false);
+    DisplayManager.update();
+    delay(1200);
+    if (active) {
+        auto& allowed = SettingsManager.settings.school_mode_faces;
+        if (std::find(allowed.begin(), allowed.end(), currentFaceIndex) == allowed.end()) {
+            setFace(allowed.empty() ? 0 : allowed.front());
+            return;
+        }
+    }
+    runRenderCycle(RenderReason::FORCED, ServerManager.getTimezonedTime());
 }
