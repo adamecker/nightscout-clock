@@ -31,6 +31,9 @@ private:
     // Authenticated network OTA update state (POST /api/update/firmware and
     // POST /api/update/filesystem stream uploads into the Arduino Update class)
     int otaUpdateCommand = -1;
+    // Runtime /config.json stashed before a filesystem image is flashed, then
+    // restored into the new image so settings survive the update.
+    String otaConfigBackup;
     bool otaUpdateAuthFailed = false;
     size_t otaUpdateWritten = 0;
     String otaUpdateError;
@@ -52,6 +55,22 @@ private:
     void handleUpdateStatus(AsyncWebServerRequest* request);
     bool fetchUpdateManifest(String& body, String& error);
     static void otaPullTask(void* param);
+    // Start a pull update; rebootAfter=false leaves the new image staged without
+    // rebooting (used to flash the filesystem before the firmware in one cycle).
+    bool startOtaPull(int command, const String& url, const String& sha256, bool rebootAfter,
+                      String& error);
+    // Read the version baked into the running LittleFS image (/version.txt).
+    String readFilesystemVersion();
+    // tick()-driven automation: daily self-update check and status heartbeat.
+    void tickAutoUpdate();
+    void tickHeartbeat();
+    static void heartbeatTask(void* param);
+    unsigned long otaAutoBootMs = 0;
+    bool otaAutoBootCheckDone = false;
+    int otaAutoLastCheckYday = -1;
+    bool otaPullReboot = true;
+    unsigned long healthcheckLastMs = 0;
+    bool healthcheckBootSent = false;
 
 public:
     static ServerManager_& getInstance();

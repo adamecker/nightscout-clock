@@ -846,7 +846,7 @@ function alertWindows(a) {
  * @returns {HTMLElement}
  */
 function systemTab() {
-    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), versionCard())
+    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), autoUpdateCard(), versionCard())
 }
 
 /**
@@ -875,7 +875,10 @@ function wifiCard() {
             field("ssid", "WiFi network name (SSID)", textInput("ssid", { maxlength: 32 })),
             field("password", "WiFi password", pw)),
         el("label.check", open, "Open WiFi network (no password)"),
-        warn), { id: "card_wifi" })
+        warn,
+        el("p.help", "If this network uses a captive portal that only lets known devices through, ",
+            "you can make the clock use another device's MAC address on the ",
+            el("a", { href: "/mac", target: "_blank", rel: "noopener noreferrer" }, "MAC setup page"), ".")), { id: "card_wifi" })
 }
 
 /**
@@ -1091,6 +1094,30 @@ function uploadOta(input, url, label) {
     const fd = new FormData()
     fd.append("file", file, file.name)
     xhr.send(fd)
+}
+
+/**
+ * Build the automatic updates and remote heartbeat card: a daily self-update
+ * check/install plus an optional status webhook for watching the clock remotely.
+ * @returns {HTMLElement}
+ */
+function autoUpdateCard() {
+    const hourRow = reactive(["ota_auto_update"], () => form.get("ota_auto_update")
+        ? el("div.grid", field("ota_auto_update_hour", "Daily check hour (0–23, clock's local time)", numberInput("ota_auto_update_hour")))
+        : el("span", { hidden: true }))
+    const hcRow = reactive(["healthcheck_url"], () => String(form.get("healthcheck_url") || "").trim()
+        ? el("div.grid", field("healthcheck_interval_hours", "Heartbeat interval (hours)", numberInput("healthcheck_interval_hours")))
+        : el("span", { hidden: true }))
+    return card("Automatic updates", "For a clock you can't reach on its own network: it checks for new releases and installs them by itself, and can report its status to a URL you watch.", el("div.stack",
+        toggleRow("ota_auto_update", "Check for and install updates automatically", "Once a day (and shortly after every boot) the clock checks the release page and installs new firmware/filesystem images itself. Your settings — network, face, school mode — are kept."),
+        hourRow,
+        field("healthcheck_url", "Status heartbeat URL (optional)", textInput("healthcheck_url", { placeholder: "https://hc-ping.com/…", maxlength: 200, trim: true })),
+        el("p.help", "The clock posts a small JSON status (version, uptime, signal, school mode) here on a schedule. ",
+            "Use ", el("a", { href: "https://healthchecks.io", target: "_blank", rel: "noopener noreferrer" }, "healthchecks.io"),
+            " to get alerted if the clock ever goes quiet, or ",
+            el("a", { href: "https://ntfy.sh", target: "_blank", rel: "noopener noreferrer" }, "ntfy.sh"),
+            " to receive the heartbeat as phone notifications."),
+        hcRow), { id: "card_autoupdate" })
 }
 
 /**

@@ -273,6 +273,20 @@ void ServerManager_::handleUpdateUpload(AsyncWebServerRequest* request, const St
             otaUpdateError = Update.errorString();
             return;
         }
+        if (command == U_SPIFFS) {
+            // Back up the runtime settings before the image is replaced; the
+            // uploaded image ships only factory defaults.
+            otaConfigBackup = "";
+            if (LittleFS.exists(CONFIG_JSON)) {
+                File f = LittleFS.open(CONFIG_JSON, "r");
+                if (f) {
+                    otaConfigBackup = f.readString();
+                    f.close();
+                }
+            }
+            // Unmount the partition being overwritten so nothing reads it mid-write.
+            LittleFS.end();
+        }
         DEBUG_PRINTF("OTA %s update started: %s\n", command == U_FLASH ? "firmware" : "filesystem",
                      filename.c_str());
     }
@@ -327,6 +341,18 @@ void ServerManager_::handleUpdateRequest(AsyncWebServerRequest* request) {
         return;
     }
     request->send(200, "application/json", "{\"status\": \"ok\"}");
+    if (command == U_SPIFFS && otaConfigBackup.length() > 0) {
+        // Restore the runtime settings into the new image so the clock comes
+        // back on the same network, face and school mode.
+        if (LittleFS.begin()) {
+            File f = LittleFS.open(CONFIG_JSON, FILE_WRITE);
+            if (f) {
+                f.print(otaConfigBackup);
+                f.close();
+            }
+        }
+        otaConfigBackup = "";
+    }
     // Reboot into the new image after the response has been flushed.
     xTaskCreate(
         [](void*) {
@@ -425,14 +451,55 @@ void ServerManager_::handleUpdateApply(AsyncWebServerRequest* request) {
                       "{\"status\": \"error\", \"error\": \"invalid manifest\"}");
         return;
     }
-    otaPullUrl = String(UPDATE_SITE_URL) + "/" + doc[key]["url"].as<const char*>();
-    otaPullSha256 = doc[key]["sha256"].as<const char*>();
+    String url = String(UPDATE_SITE_URL) + "/" + doc[key]["url"].as<const char*>();
+    String sha256 = doc[key]["sha256"].as<const char*>();
+    String startError;
+    if (!startOtaPull(command, url, sha256, true, startError)) {
+        request->send(409, "application/json",
+                      "{\"status\": \"error\", \"error\": \"" + startError + "\"}");
+        return;
+    }
+    request->send(202, "application/json", "{\"status\": \"started\"}");
+}
+
+/**
+ * Begin a pull update if none is running. The download task validates the
+ * image and flashes it; on success it reboots unless rebootAfter is false.
+ */
+bool ServerManager_::startOtaPull(int command, const String& url, const String& sha256,
+                                  bool rebootAfter, String& error) {
+    if (otaPullState == OtaPullState::DOWNLOADING || otaPullState == OtaPullState::VERIFYING ||
+        otaUpdateCommand >= 0) {
+        error = "an update is already in progress";
+        return false;
+    }
+    otaPullUrl = url;
+    otaPullSha256 = sha256;
     otaPullCommand = command;
+    otaPullReboot = rebootAfter;
     otaPullState = OtaPullState::DOWNLOADING;
     otaPullProgress = 0;
     otaPullError = "";
     xTaskCreate(otaPullTask, "ota_pull", 8192, this, 1, NULL);
-    request->send(202, "application/json", "{\"status\": \"started\"}");
+    return true;
+}
+
+/**
+ * The LittleFS image ships /version.txt, so the running firmware can tell which
+ * filesystem release is flashed without trusting any cached state.
+ */
+String ServerManager_::readFilesystemVersion() {
+    if (!LittleFS.exists("/version.txt")) {
+        return "";
+    }
+    File f = LittleFS.open("/version.txt", "r");
+    if (!f) {
+        return "";
+    }
+    String v = f.readString();
+    f.close();
+    v.trim();
+    return v;
 }
 
 void ServerManager_::handleUpdateStatus(AsyncWebServerRequest* request) {
@@ -498,8 +565,18 @@ void ServerManager_::otaPullTask(void* param) {
             }
         if (error.isEmpty()) {
             // A filesystem update writes the partition the web UI is served
-            // from; unmount it first so nothing reads it mid-write.
+            // from. Back up the runtime settings first: the new image ships
+            // only factory defaults, so without this the clock would lose
+            // WiFi, school mode and the selected face on reboot.
             if (self->otaPullCommand == U_SPIFFS) {
+                self->otaConfigBackup = "";
+                if (LittleFS.exists(CONFIG_JSON)) {
+                    File f = LittleFS.open(CONFIG_JSON, "r");
+                    if (f) {
+                        self->otaConfigBackup = f.readString();
+                        f.close();
+                    }
+                }
                 LittleFS.end();
             }
             mbedtls_sha256_context sha;
@@ -553,6 +630,18 @@ void ServerManager_::otaPullTask(void* param) {
                     self->otaPullState = OtaPullState::VERIFYING;
                     if (self->otaPullSha256.equalsIgnoreCase(hex)) {
                         if (Update.end(true)) {
+                            if (self->otaPullCommand == U_SPIFFS) {
+                                // Restore the runtime settings into the new image so the
+                                // clock comes back on the same network, face and school mode.
+                                if (LittleFS.begin() && self->otaConfigBackup.length() > 0) {
+                                    File f = LittleFS.open(CONFIG_JSON, FILE_WRITE);
+                                    if (f) {
+                                        f.print(self->otaConfigBackup);
+                                        f.close();
+                                    }
+                                }
+                                self->otaConfigBackup = "";
+                            }
                             DEBUG_PRINTF("OTA pull %s complete: %u bytes\n",
                                          self->otaPullCommand == U_FLASH ? "firmware" : "filesystem",
                                          totalWritten);
@@ -575,9 +664,11 @@ void ServerManager_::otaPullTask(void* param) {
     if (error.isEmpty()) {
         self->otaPullProgress = 100;
         self->otaPullState = OtaPullState::DONE;
-        // Let the status poll observe "done" before rebooting.
-        vTaskDelay(pdMS_TO_TICKS(1500));
-        ESP.restart();
+        if (self->otaPullReboot) {
+            // Let the status poll observe "done" before rebooting.
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            ESP.restart();
+        }
     } else {
         self->otaPullError = error;
         self->otaPullState = OtaPullState::ERROR;
@@ -1153,5 +1244,143 @@ void ServerManager_::tick() {
         dnsServer.processNextRequest();
     } else {
         initTimeIfNeeded();
+        tickAutoUpdate();
+        tickHeartbeat();
     }
+}
+
+/**
+ * Automatic self-update: once shortly after boot (catches anything missed
+ * while offline) and then once a day at the configured local hour, the clock
+ * checks the release manifest and applies new images itself. The filesystem
+ * image goes first when both are outdated, so a single reboot lands both.
+ */
+void ServerManager_::tickAutoUpdate() {
+    if (!SettingsManager.settings.ota_auto_update || WiFi.status() != WL_CONNECTED) {
+        return;
+    }
+    if (otaAutoBootMs == 0) {
+        otaAutoBootMs = millis();
+    }
+    bool due = false;
+    bool bootCheck = false;
+    if (!otaAutoBootCheckDone) {
+        bootCheck = true;
+        due = millis() - otaAutoBootMs > 180000;
+    } else if (time(nullptr) > 1700000000) {
+        tm t = getTimezonedTime();
+        int hour = SettingsManager.settings.ota_auto_update_hour;
+        if (hour < 0) {
+            hour = 0;
+        } else if (hour > 23) {
+            hour = 23;
+        }
+        due = t.tm_hour == hour && otaAutoLastCheckYday != t.tm_yday;
+        if (due) {
+            otaAutoLastCheckYday = t.tm_yday;
+        }
+    }
+    if (!due) {
+        return;
+    }
+    if (bootCheck) {
+        otaAutoBootCheckDone = true;
+    }
+    String manifest, error;
+    if (!fetchUpdateManifest(manifest, error)) {
+        DEBUG_PRINTF("Auto-update check failed: %s\n", error.c_str());
+        return;
+    }
+    JsonDocument doc;
+    if (deserializeJson(doc, manifest) || !doc["version"].is<const char*>()) {
+        DEBUG_PRINTLN("Auto-update check failed: bad manifest");
+        return;
+    }
+    String latest = doc["version"].as<const char*>();
+    const char* key = nullptr;
+    int command = -1;
+    if (latest.length() > 0 && latest != readFilesystemVersion() && doc["filesystem"]["url"]) {
+        key = "filesystem";
+        command = U_SPIFFS;
+    } else if (latest.length() > 0 && latest != VERSION && doc["firmware"]["url"]) {
+        key = "firmware";
+        command = U_FLASH;
+    }
+    if (command < 0) {
+        return;  // up to date
+    }
+    String url = String(UPDATE_SITE_URL) + "/" + doc[key]["url"].as<const char*>();
+    String sha256 = doc[key]["sha256"].as<const char*>();
+    if (startOtaPull(command, url, sha256, true, error)) {
+        DEBUG_PRINTF("Auto-update started: %s %s\n", key, latest.c_str());
+    } else {
+        DEBUG_PRINTF("Auto-update not started: %s\n", error.c_str());
+    }
+}
+
+/**
+ * Status heartbeat: POST a small JSON blob to the configured URL on a
+ * schedule so the clock can be watched from anywhere. Works with
+ * healthchecks.io (dead-man's-switch alerting), ntfy.sh (phone push), or
+ * any webhook receiver.
+ */
+void ServerManager_::tickHeartbeat() {
+    String url = SettingsManager.settings.healthcheck_url;
+    url.trim();
+    if (url.length() == 0 || WiFi.status() != WL_CONNECTED) {
+        return;
+    }
+    unsigned long now = millis();
+    if (healthcheckLastMs == 0) {
+        healthcheckLastMs = now;
+    }
+    int intervalH = SettingsManager.settings.healthcheck_interval_hours;
+    if (intervalH < 1) {
+        intervalH = 1;
+    } else if (intervalH > 168) {
+        intervalH = 168;
+    }
+    bool bootDue = !healthcheckBootSent && now > 120000;
+    bool intervalDue = now - healthcheckLastMs >= (unsigned long)intervalH * 3600000UL;
+    if (!bootDue && !intervalDue) {
+        return;
+    }
+    if (bootDue) {
+        healthcheckBootSent = true;
+    }
+    healthcheckLastMs = now;
+    xTaskCreate(heartbeatTask, "heartbeat", 8192, this, 1, NULL);
+}
+
+void ServerManager_::heartbeatTask(void* param) {
+    auto* self = static_cast<ServerManager_*>(param);
+    (void)self;
+    String url = SettingsManager.settings.healthcheck_url;
+    url.trim();
+    JsonDocument doc;
+    doc["version"] = VERSION;
+    doc["uptime_s"] = (int)(millis() / 1000);
+    doc["rssi_dbm"] = WiFi.RSSI();
+    doc["school_mode"] = SettingsManager.settings.school_mode_active;
+    doc["face"] = SettingsManager.settings.default_clockface;
+    doc["heap_free"] = (int)ESP.getFreeHeap();
+    String body;
+    serializeJson(doc, body);
+    bool useTls = url.startsWith("https://");
+    WiFiClient* client = useTls ? new WiFiClientSecure() : new WiFiClient();
+    if (useTls) {
+        static_cast<WiFiClientSecure*>(client)->setInsecure();
+    }
+    HTTPClient http;
+    http.setTimeout(15000);
+    if (http.begin(*client, url)) {
+        http.addHeader("Content-Type", "application/json");
+        int code = http.POST(body);
+        DEBUG_PRINTF("Heartbeat -> %s: HTTP %d\n", url.c_str(), code);
+        http.end();
+    } else {
+        DEBUG_PRINTF("Heartbeat -> %s: begin failed\n", url.c_str());
+    }
+    delete client;
+    vTaskDelete(NULL);
 }
