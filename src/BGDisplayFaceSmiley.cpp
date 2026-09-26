@@ -14,46 +14,34 @@ constexpr int SMILEY_SIZE = 8;  // 8x8, occupies the full height on the left
 
 // Filled round face (the colored background disc).
 const uint8_t face_disc[] PROGMEM = {
-    0b00111100,
-    0b01111110,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b11111111,
-    0b01111110,
-    0b00111100,
+    0b00111100, 0b01111110, 0b11111111, 0b11111111, 0b11111111, 0b11111111, 0b01111110, 0b00111100,
 };
 
 // Eyes + smile (mouth curves up).
 const uint8_t features_happy[] PROGMEM = {
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
     0b00100100,  // eyes
     0b00000000,
     0b01000010,  // mouth corners up...
     0b00111100,  // ...meeting at the bottom
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
 };
 
 // Eyes + frown (mouth curves down) - the smile flipped.
 const uint8_t features_sad[] PROGMEM = {
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
     0b00100100,  // eyes
     0b00000000,
     0b00111100,  // mouth top in the middle...
     0b01000010,  // ...corners pulling down
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
 };
 
-// Slanted brows over eyes + frown = angry.
-const uint8_t features_angry[] PROGMEM = {
-    0b00000000,
-    0b00000000,
-    0b01000010,  // brow outer corners high
-    0b00100100,  // brow inner corners low (slant toward the nose) / eyes
+// Raised brows over eyes + frown = concerned.
+const uint8_t features_concerned[] PROGMEM = {
+    0b00000000, 0b00000000,
+    0b00011000,  // brows raised toward the middle
+    0b00100100,  // eyes
     0b00000000,
     0b00111100,  // frown top
     0b01000010,  // frown corners down
@@ -62,20 +50,17 @@ const uint8_t features_angry[] PROGMEM = {
 
 // Eyes + straight mouth = neutral (used when there is no data).
 const uint8_t features_neutral[] PROGMEM = {
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
     0b00100100,  // eyes
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
     0b00111100,  // straight mouth
-    0b00000000,
-    0b00000000,
+    0b00000000, 0b00000000,
 };
 
 // Fade an RGB565 color toward black by scaling each channel by FACE_DIM_NUM /
 // FACE_DIM_DEN. Used to draw the round face background slightly dimmed so it
 // reads as a soft badge behind the crisp cutout features and the reading.
-constexpr uint16_t FACE_DIM_NUM = 3;
+constexpr uint16_t FACE_DIM_NUM = 4;
 constexpr uint16_t FACE_DIM_DEN = 5;
 uint16_t fadeColor(uint16_t color) {
     uint16_t r = (color >> 11) & 0x1F;
@@ -112,8 +97,7 @@ void drawCenteredReadingRight(const String& text) {
 }
 }  // namespace
 
-void BGDisplayFaceSmiley::showReadings(
-    const std::list<GlucoseReading>& readings, bool dataIsOld) const {
+void BGDisplayFaceSmiley::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     auto lastReading = readings.back();
     BG_LEVEL level = bgDisplayManager.getGlucoseIntervals().getBGLevel(lastReading.sgv);
 
@@ -127,7 +111,7 @@ void BGDisplayFaceSmiley::showReadings(
             break;
         case BG_LEVEL::WARNING_HIGH:
         case BG_LEVEL::URGENT_HIGH:
-            features = features_angry;
+            features = features_concerned;
             faceColor = COLOR_RED;
             break;
         case BG_LEVEL::NORMAL:
@@ -140,9 +124,10 @@ void BGDisplayFaceSmiley::showReadings(
             break;
     }
 
-    // Old data uses the configured old-data color regardless of the level.
+    // Old data is neutral and greyed out regardless of the previous glucose level.
     if (dataIsOld) {
-        faceColor = getDataOldColor();
+        features = features_neutral;
+        faceColor = COLOR_GRAY;
     }
 
     DisplayManager.clearMatrix(false);

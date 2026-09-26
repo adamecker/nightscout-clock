@@ -50,8 +50,7 @@ public:
     void setPower(bool power);
     void setBrightness(int bri);
     void update();
-    void clearMatrixPart(
-        uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool updateMatrix = true);
+    void clearMatrixPart(uint8_t x, uint8_t y, uint8_t width, uint8_t height, bool updateMatrix = true);
     float getTextWidth(const char* text, byte textCase);
     void setFont(FONT_TYPE fontType);
 };

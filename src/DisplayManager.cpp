@@ -185,7 +185,8 @@ void DisplayManager_::printText(
 }
 
 void DisplayManager_::drawBitmap(
-    int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h, uint16_t color, bool updateMatrix) {
+    int16_t x, int16_t y, const uint8_t bitmap[], int16_t w, int16_t h, uint16_t color,
+    bool updateMatrix) {
     matrix->setCursor(x, y);
     matrix->drawBitmap(x, y, bitmap, w, h, color);
     if (updateMatrix) {
@@ -262,8 +263,10 @@ uint16_t DisplayManager_::hsvToRgb565(uint8_t hue) {
 
 void DisplayManager_::showFatalError(String errorMessage) {
     DEBUG_PRINTF("Fatal error: %s\n", errorMessage.c_str());
-    // White on the fatal-error screen: gray can be invisible at minimum brightness.
-    setFont(FONT_TYPE::MEDIUM);
+    // Small font: the y=6 baseline below is centered for it (yAdvance 6); a
+    // larger font would be pushed up and clipped. White: gray can be invisible
+    // at minimum brightness.
+    setFont(FONT_TYPE::SMALL);
     setTextColor(COLOR_WHITE);
 
     auto startMills = millis();

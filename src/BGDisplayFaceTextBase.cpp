@@ -144,19 +144,13 @@ void BGDisplayFaceTextBase::showTrendArrow(
     const GlucoseReading reading, int16_t x, int16_t y, bool dataIsOld, bool colorByReading,
     bool updateMatrix) const {
     if (dataIsOld) {
-        // Stale data: draw a cross instead of the trend arrow.
         DisplayManager.drawBitmap(x, y, symbol_dataOld, 5, 5, getDataOldColor(), updateMatrix);
         return;
     }
 
-    uint16_t color = COLOR_WHITE;
-    if (colorByReading) {
-        color = getDisplayColorByBGValue(reading);
-    }
-
+    const uint16_t color = colorByReading ? getDisplayColorByBGValue(reading) : COLOR_WHITE;
     DisplayManager.drawBitmap(x, y, glucoseTrendSymbols.at(reading.trend), 5, 5, color, updateMatrix);
 }
-
 
 #pragma endregion Show arrow
 
