@@ -38,6 +38,21 @@ private:
                             uint8_t* data, size_t len, bool final, int command);
     void handleUpdateRequest(AsyncWebServerRequest* request);
 
+    // Self-update (pull): the clock downloads release images from the project
+    // site itself. Only one update (push or pull) may run at a time.
+    enum class OtaPullState : uint8_t { IDLE, DOWNLOADING, VERIFYING, DONE, ERROR };
+    OtaPullState otaPullState = OtaPullState::IDLE;
+    int otaPullProgress = 0;  // 0-100 while downloading
+    String otaPullError;
+    int otaPullCommand = 0;  // U_FLASH; Update.h is not included here
+    String otaPullUrl;
+    String otaPullSha256;
+    void handleUpdateCheck(AsyncWebServerRequest* request);
+    void handleUpdateApply(AsyncWebServerRequest* request);
+    void handleUpdateStatus(AsyncWebServerRequest* request);
+    bool fetchUpdateManifest(String& body, String& error);
+    static void otaPullTask(void* param);
+
 public:
     static ServerManager_& getInstance();
     void setup();

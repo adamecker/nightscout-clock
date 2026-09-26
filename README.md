@@ -59,12 +59,11 @@ Thanks [@CallumMcK](https://github.com/CallumMcK)
 
 ### Over-the-air (network) update
 
-Once the clock runs a firmware with OTA support (see below), it can update itself over the network without USB:
+Once the clock runs a firmware with OTA support (see below), it can update itself over the network without USB. Two ways:
 
-1. Build the artifacts: `bash scripts/build.sh --all` (produces `.pio/build/ulanzi_debug/firmware.bin` and `littlefs.bin`).
-2. Open the clock's web interface (`http://<clock-ip>/`, System tab → **Firmware update**), log in if web authentication is enabled.
-3. **Upload firmware** with `firmware.bin`, or **Upload filesystem** with `littlefs.bin`. The clock validates the image (firmware must be a real ESP32 app image; the filesystem image must match the LittleFS partition size) and reboots into it.
-4. Prefer scripting? Log in once via the web UI, then reuse the cookie: `curl -b "auth_token=<token>" -F "file=@firmware.bin" http://<clock-ip>/api/update/firmware` (same for `/api/update/filesystem` with `littlefs.bin`).
+**Self-update (pull, recommended).** In the clock's web interface (`http://<clock-ip>/`, System tab → **Firmware update**), click **Check for updates**. The clock fetches the release manifest from this repo's GitHub Pages site, compares versions, and — if you confirm — downloads and verifies the image itself (SHA-256 checked before flashing) and reboots. This works from anywhere the clock has outbound internet, e.g. a school network, with no inbound connection needed. Firmware and the settings-page filesystem are separate installs; update both when a release changes the web UI.
+
+**Upload (push).** Build the artifacts locally (`bash scripts/build.sh --all`), then use the same Firmware update card to upload `firmware.bin` or `littlefs.bin` from your browser, or script it: log in once via the web UI, then `curl -b "auth_token=<token>" -F "file=@firmware.bin" http://<clock-ip>/api/update/firmware` (same for `/api/update/filesystem` with `littlefs.bin`). Needs your browser on the same network as the clock.
 
 Firmware and the settings-page filesystem are separate update types with separate endpoints, so update both when a release changes the web UI.
 

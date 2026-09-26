@@ -982,14 +982,80 @@ function updateCard() {
     const fwInput = el("input", { type: "file", accept: ".bin", hidden: true })
     const fsInput = el("input", { type: "file", accept: ".bin", hidden: true })
     const bar = el("progress", { id: "ota_bar", max: "100", value: "0", hidden: true })
-    const status = el("p.help", { id: "ota_status" }, "The clock reboots into the new image after a successful upload.")
+    const status = el("p.help", { id: "ota_status" }, "The clock reboots into the new image after a successful update.")
+    const checkStatus = el("p.help", { id: "ota_check" })
+    const installRow = el("div.row", { hidden: true })
+    const installFwBtn = el("button.btn", { type: "button" }, icon("download"), "Install firmware")
+    const installFsBtn = el("button.btn", { type: "button" }, icon("download"), "Install filesystem")
+    installFwBtn.addEventListener("click", () => applyOta("firmware"))
+    installFsBtn.addEventListener("click", () => applyOta("filesystem"))
+    installRow.append(installFwBtn, installFsBtn)
+    const checkBtn = el("button.btn", { type: "button" }, icon("refresh"), "Check for updates")
+    checkBtn.addEventListener("click", async () => {
+        checkStatus.textContent = "Checking…"
+        installRow.hidden = true
+        try {
+            const r = await api.post("/api/update/check")
+            checkStatus.textContent = r.updateAvailable
+                ? `Update available: ${r.latest} (running ${r.current}).`
+                : `Up to date (${r.current}).`
+            installRow.hidden = !r.updateAvailable
+        } catch (e) {
+            checkStatus.textContent = "Check failed: the clock could not reach the release site."
+        }
+    })
     fwInput.addEventListener("change", () => uploadOta(fwInput, "/api/update/firmware", "firmware"))
     fsInput.addEventListener("change", () => uploadOta(fsInput, "/api/update/filesystem", "filesystem"))
-    return card("Firmware update", "Update the clock over the network: firmware.bin for the app, littlefs.bin for the settings page. Uploaded to separate endpoints and validated before reboot.", el("div.stack",
+    return card("Firmware update", "Update over the network: the clock can download a release itself (works from anywhere it has internet), or you can upload firmware.bin / littlefs.bin from this browser. The clock reboots into the new image after a successful update.", el("div.stack",
+        el("div.row", checkBtn),
+        checkStatus, installRow,
         el("div.row",
             el("button.btn", { type: "button", onclick: () => fwInput.click() }, icon("upload"), "Upload firmware", fwInput),
             el("button.btn", { type: "button", onclick: () => fsInput.click() }, icon("upload"), "Upload filesystem", fsInput)),
         bar, status), { id: "card_update" })
+}
+
+/**
+ * Start a self-update download on the clock, then poll its progress until done.
+ * @param {string} type - "firmware" or "filesystem".
+ * @returns {Promise<void>}
+ */
+async function applyOta(type) {
+    const bar = $("#ota_bar"), status = $("#ota_status")
+    const fail = msg => { bar.hidden = true; status.textContent = msg }
+    try {
+        await api.post(`/api/update/apply?type=${type}`)
+    } catch (e) {
+        return void fail("Could not start the update.")
+    }
+    bar.hidden = false
+    bar.value = 0
+    status.textContent = `Downloading ${type}…`
+    let lost = 0
+    const poll = setInterval(async () => {
+        let s
+        try {
+            s = await api.get("/api/update/status")
+            lost = 0
+        } catch (e) {
+            // The clock stops answering when it reboots into the new image.
+            // Require consecutive failures so one transient blip can't fake success.
+            if (++lost < 3) return
+            clearInterval(poll)
+            return void fail(`${type} installed, the clock is rebooting…`)
+        }
+        if (s.state === "downloading" || s.state === "verifying") {
+            bar.value = s.state === "verifying" ? 100 : s.progress
+            status.textContent = s.state === "verifying" ? `Verifying ${type}…` : `Downloading ${type}… ${s.progress}%`
+        } else if (s.state === "done") {
+            clearInterval(poll)
+            fail(`${type} installed, the clock is rebooting…`)
+        } else if (s.state === "error") {
+            clearInterval(poll)
+            fail(`Update failed: ${s.error || "unknown error"}`)
+            toast("Update failed.", "bad")
+        }
+    }, 2000)
 }
 
 /**

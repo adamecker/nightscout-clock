@@ -1,13 +1,17 @@
 #include "ServerManager.h"
 
+#include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <HTTPClient.h>
 #include <LittleFS.h>
 #include <Update.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <esp_partition.h>
 #include <esp_system.h>
+#include <mbedtls/sha256.h>
 
 #include "BGSourceManager.h"
 #include "DisplayManager.h"
@@ -331,6 +335,255 @@ void ServerManager_::handleUpdateRequest(AsyncWebServerRequest* request) {
             ESP.restart();
         },
         "ota_restart", 2048, NULL, 1, NULL);
+}
+
+// --- Self-update (pull) ----------------------------------------------------
+// The clock fetches a small manifest from the release site, compares versions,
+// and downloads the image itself. This works anywhere the clock has outbound
+// internet (e.g. a school network), with no inbound connection needed.
+// The manifest (www/update.json, published by the release workflow) carries
+// SHA-256 hashes so a tampered or truncated download is rejected before the
+// image is marked valid.
+
+static const char* UPDATE_SITE_URL = "https://adamecker.github.io/nightscout-clock";
+static const char* UPDATE_MANIFEST_URL = "https://adamecker.github.io/nightscout-clock/update.json";
+
+bool ServerManager_::fetchUpdateManifest(String& body, String& error) {
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    http.setTimeout(15000);
+    if (!http.begin(client, UPDATE_MANIFEST_URL)) {
+        error = "cannot start request";
+        return false;
+    }
+    int code = http.GET();
+    if (code != HTTP_CODE_OK) {
+        error = "manifest request failed: " + String(code);
+        http.end();
+        return false;
+    }
+    body = http.getString();
+    http.end();
+    return true;
+}
+
+void ServerManager_::handleUpdateCheck(AsyncWebServerRequest* request) {
+    if (!enforceAuthentication(request)) {
+        return;
+    }
+    String manifest, error;
+    if (!fetchUpdateManifest(manifest, error)) {
+        request->send(502, "application/json",
+                      "{\"status\": \"error\", \"error\": \"" + error + "\"}");
+        return;
+    }
+    JsonDocument doc;
+    if (deserializeJson(doc, manifest) || !doc["version"].is<const char*>()) {
+        request->send(502, "application/json",
+                      "{\"status\": \"error\", \"error\": \"invalid manifest\"}");
+        return;
+    }
+    String latest = doc["version"].as<const char*>();
+    bool updateAvailable = latest.length() > 0 && latest != VERSION;
+    String body = "{\"status\": \"ok\", \"current\": \"" VERSION "\", \"latest\": \"";
+    body += latest;
+    body += "\", \"updateAvailable\": ";
+    body += updateAvailable ? "true" : "false";
+    body += "}";
+    request->send(200, "application/json", body);
+}
+
+void ServerManager_::handleUpdateApply(AsyncWebServerRequest* request) {
+    if (!enforceAuthentication(request)) {
+        return;
+    }
+    String type = request->hasParam("type") ? request->getParam("type")->value() : "";
+    int command = type == "firmware" ? U_FLASH : type == "filesystem" ? U_SPIFFS : -1;
+    if (command < 0) {
+        request->send(400, "application/json",
+                      "{\"status\": \"error\", \"error\": \"type must be firmware or filesystem\"}");
+        return;
+    }
+    if (otaPullState == OtaPullState::DOWNLOADING || otaPullState == OtaPullState::VERIFYING ||
+        otaUpdateCommand >= 0) {
+        request->send(409, "application/json",
+                      "{\"status\": \"error\", \"error\": \"an update is already in progress\"}");
+        return;
+    }
+    String manifest, error;
+    if (!fetchUpdateManifest(manifest, error)) {
+        request->send(502, "application/json",
+                      "{\"status\": \"error\", \"error\": \"" + error + "\"}");
+        return;
+    }
+    JsonDocument doc;
+    const char* key = command == U_FLASH ? "firmware" : "filesystem";
+    if (deserializeJson(doc, manifest) || !doc[key]["url"].is<const char*>() ||
+        !doc[key]["sha256"].is<const char*>()) {
+        request->send(502, "application/json",
+                      "{\"status\": \"error\", \"error\": \"invalid manifest\"}");
+        return;
+    }
+    otaPullUrl = String(UPDATE_SITE_URL) + "/" + doc[key]["url"].as<const char*>();
+    otaPullSha256 = doc[key]["sha256"].as<const char*>();
+    otaPullCommand = command;
+    otaPullState = OtaPullState::DOWNLOADING;
+    otaPullProgress = 0;
+    otaPullError = "";
+    xTaskCreate(otaPullTask, "ota_pull", 8192, this, 1, NULL);
+    request->send(202, "application/json", "{\"status\": \"started\"}");
+}
+
+void ServerManager_::handleUpdateStatus(AsyncWebServerRequest* request) {
+    if (!enforceAuthentication(request)) {
+        return;
+    }
+    const char* state = "idle";
+    switch (otaPullState) {
+        case OtaPullState::DOWNLOADING: state = "downloading"; break;
+        case OtaPullState::VERIFYING: state = "verifying"; break;
+        case OtaPullState::DONE: state = "done"; break;
+        case OtaPullState::ERROR: state = "error"; break;
+        case OtaPullState::IDLE: break;
+    }
+    String body = "{\"status\": \"ok\", \"state\": \"";
+    body += state;
+    body += "\", \"progress\": ";
+    body += otaPullProgress;
+    body += ", \"error\": \"";
+    body += otaPullError;
+    body += "\"}";
+    request->send(200, "application/json", body);
+}
+
+static void sha256Hex(const uint8_t* hash, char* out) {
+    static const char* digits = "0123456789abcdef";
+    for (int i = 0; i < 32; i++) {
+        out[i * 2] = digits[hash[i] >> 4];
+        out[i * 2 + 1] = digits[hash[i] & 0xF];
+    }
+    out[64] = '\0';
+}
+
+void ServerManager_::otaPullTask(void* param) {
+    auto* self = static_cast<ServerManager_*>(param);
+    String error;
+    size_t totalWritten = 0;
+
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    http.setTimeout(30000);
+    if (!http.begin(client, self->otaPullUrl)) {
+        error = "cannot start download";
+    } else {
+        int code = http.GET();
+        if (code != HTTP_CODE_OK) {
+            error = "download failed: " + String(code);
+            http.end();
+        } else {
+            int total = http.getSize();
+            if (self->otaPullCommand == U_SPIFFS) {
+                // mklittlefs images are exactly the partition size; anything else
+                // is the wrong file for this endpoint.
+                size_t fsSize = otaFilesystemPartitionSize();
+                if (total <= 0 || (size_t)total != fsSize) {
+                    error = "filesystem image size mismatch";
+                }
+            }
+            if (error.isEmpty() && !Update.begin(total > 0 ? (size_t)total : UPDATE_SIZE_UNKNOWN,
+                                                 self->otaPullCommand)) {
+                error = Update.errorString();
+            }
+        if (error.isEmpty()) {
+            // A filesystem update writes the partition the web UI is served
+            // from; unmount it first so nothing reads it mid-write.
+            if (self->otaPullCommand == U_SPIFFS) {
+                LittleFS.end();
+            }
+            mbedtls_sha256_context sha;
+            mbedtls_sha256_init(&sha);
+            mbedtls_sha256_starts(&sha, 0);
+            WiFiClient* stream = http.getStreamPtr();
+            uint8_t buf[1024];
+            bool firstChunk = true;
+            unsigned long lastReadMs = millis();
+            while (error.isEmpty() && (total <= 0 || totalWritten < (size_t)total)) {
+                size_t avail = stream->available();
+                if (avail > 0) {
+                    size_t n = stream->readBytes(buf, avail > sizeof(buf) ? sizeof(buf) : avail);
+                    if (n == 0) {
+                        break;
+                    }
+                    if (firstChunk && self->otaPullCommand == U_FLASH && buf[0] != 0xE9) {
+                        error = "not a firmware image";
+                        break;
+                    }
+                    firstChunk = false;
+                    mbedtls_sha256_update(&sha, buf, n);
+                    if (Update.write(buf, n) != n) {
+                        error = Update.errorString();
+                        break;
+                    }
+                    totalWritten += n;
+                    lastReadMs = millis();
+                    if (total > 0) {
+                        self->otaPullProgress = (int)(totalWritten * 100 / (size_t)total);
+                    }
+                } else if (!stream->connected()) {
+                    break;
+                } else {
+                    if (millis() - lastReadMs > 60000) {
+                        error = "download stalled";
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(20));
+                }
+            }
+            uint8_t hash[32];
+            mbedtls_sha256_finish(&sha, hash);
+            mbedtls_sha256_free(&sha);
+            if (error.isEmpty()) {
+                if (total > 0 && totalWritten != (size_t)total) {
+                    error = "truncated download";
+                } else {
+                    char hex[65];
+                    sha256Hex(hash, hex);
+                    self->otaPullState = OtaPullState::VERIFYING;
+                    if (self->otaPullSha256.equalsIgnoreCase(hex)) {
+                        if (Update.end(true)) {
+                            DEBUG_PRINTF("OTA pull %s complete: %u bytes\n",
+                                         self->otaPullCommand == U_FLASH ? "firmware" : "filesystem",
+                                         totalWritten);
+                        } else {
+                            error = Update.errorString();
+                        }
+                    } else {
+                        error = "checksum mismatch";
+                    }
+                }
+            }
+            if (!error.isEmpty()) {
+                Update.abort();
+            }
+        }
+        http.end();
+        }
+    }
+
+    if (error.isEmpty()) {
+        self->otaPullProgress = 100;
+        self->otaPullState = OtaPullState::DONE;
+        // Let the status poll observe "done" before rebooting.
+        vTaskDelay(pdMS_TO_TICKS(1500));
+        ESP.restart();
+    } else {
+        self->otaPullError = error;
+        self->otaPullState = OtaPullState::ERROR;
+        DEBUG_PRINTF("OTA pull failed: %s\n", error.c_str());
+    }
+    vTaskDelete(NULL);
 }
 
 IPAddress ServerManager_::startWifi() {
@@ -729,6 +982,17 @@ void ServerManager_::setupWebServer(IPAddress ip) {
                size_t len, bool final) {
             handleUpdateUpload(request, filename, index, data, len, final, U_SPIFFS);
         });
+
+    // Self-update (pull): the clock downloads release images from the project
+    // site itself. Check compares versions; apply starts a background download
+    // task; status reports progress. Works wherever the clock has outbound
+    // internet, with no inbound connection needed.
+    ws->on("/api/update/check", HTTP_POST,
+           [this](AsyncWebServerRequest* request) { handleUpdateCheck(request); });
+    ws->on("/api/update/apply", HTTP_POST,
+           [this](AsyncWebServerRequest* request) { handleUpdateApply(request); });
+    ws->on("/api/update/status", HTTP_GET,
+           [this](AsyncWebServerRequest* request) { handleUpdateStatus(request); });
 
     // api call which returns status (isConnected, internet is reacheable, is in AP mode, bg source type
     // and status)
