@@ -9,7 +9,7 @@
 #include <WiFi.h>
 
 namespace {
-String cachedCustomTitle = "Brynn M Ecker";
+String cachedCustomTitle = "Nightscout";
 bool isFetchingTitle = false;
 int16_t tScrollX = 32;
 unsigned long tLastStep = 0, tPauseStart = 0;
@@ -17,12 +17,14 @@ bool tIsPaused = false;
 
 void fetchTitleTask(void* param) {
     String baseUrl = SettingsManager.settings.nightscout_url;
-    if (baseUrl.length() == 0) baseUrl = "https://ecker.azurewebsites.net/";
+    String token = SettingsManager.settings.nightscout_api_key;
+    // No Nightscout endpoint configured: keep the default title, nothing to fetch.
+    if (baseUrl.length() == 0 || token.length() == 0) {
+        isFetchingTitle = false;
+        vTaskDelete(NULL);
+    }
     if (baseUrl.endsWith("/")) baseUrl.remove(baseUrl.length() - 1);
     if (!baseUrl.startsWith("http")) baseUrl = "https://" + baseUrl;
-
-    String token = SettingsManager.settings.nightscout_api_key;
-    if (token.length() == 0) token = "ulanzismar-cc8f8bd8a57af7f3";
 
     String url = baseUrl + "/api/v1/status.json?token=" + token;
     WiFiClientSecure client;
@@ -60,7 +62,9 @@ void BGDisplayFaceTitleScroll::onActivate() const {
     tScrollX = 32; tLastStep = 0; tPauseStart = 0; tIsPaused = false;
     if (!isFetchingTitle && WiFi.isConnected()) {
         isFetchingTitle = true;
-        xTaskCreatePinnedToCore(fetchTitleTask, "titleFetch", 8192, NULL, 1, NULL, 1);
+        if (xTaskCreatePinnedToCore(fetchTitleTask, "titleFetch", 8192, NULL, 1, NULL, 1) != pdPASS) {
+            isFetchingTitle = false;
+        }
     }
 }
 bool BGDisplayFaceTitleScroll::needsFrequentRefresh() const { return true; }
@@ -81,11 +85,14 @@ void BGDisplayFaceTitleScroll::showTitleTrain(const std::list<GlucoseReading>& r
         if (readings.size() >= 2) {
             auto it = readings.rbegin(); it++;
             int d = lastReading.sgv - it->sgv;
-            deltaStr = (d >= 0 ? "+" : "") + String(d);
+            deltaStr = (d >= 0 ? "+" : "") + getPrintableReading(d);
+            // sgv is stored in mg/dL internally regardless of display units.
             towards = (lastReading.sgv > 180 && d < 0) || (lastReading.sgv < 70 && d > 0) || (lastReading.sgv >= 70 && lastReading.sgv <= 180);
         }
     }
 
+    // Measure with the font used for drawing below; getTextWidth uses currentFont.
+    DisplayManager.setFont(FONT_TYPE::MEDIUM);
     int titleW = DisplayManager.getTextWidth(cachedCustomTitle.c_str(), 2);
     int bgW = DisplayManager.getTextWidth(bgStr.c_str(), 2);
     int deltaW = deltaStr.length() > 0 ? DisplayManager.getTextWidth(deltaStr.c_str(), 2) : 0;
@@ -96,7 +103,7 @@ void BGDisplayFaceTitleScroll::showTitleTrain(const std::list<GlucoseReading>& r
         if (now - tPauseStart > 3500) tIsPaused = false;
     } else if (now - tLastStep > 35) {
         tScrollX--;
-        if (tScrollX + titleW + 10 == centerTarget) {
+        if (tScrollX + titleW + 10 <= centerTarget) {
             tIsPaused = true;
             tPauseStart = now;
         }
@@ -107,17 +114,16 @@ void BGDisplayFaceTitleScroll::showTitleTrain(const std::list<GlucoseReading>& r
     int curStats = tScrollX + titleW + 10;
     int curBg = curStats, curArr = curBg + bgW + 2, curDelta = curArr + 5 + 3;
 
-    DisplayManager.setFont(FONT_TYPE::MEDIUM);
     DisplayManager.setTextColor(COLOR_CYAN);
     DisplayManager.printText(tScrollX, 6, cachedCustomTitle.c_str(), TEXT_ALIGNMENT::LEFT, 2, false);
 
-    uint16_t bgCol = dataIsOld ? (uint16_t)COLOR_GRAY : getDisplayColorByBGValue(lastReading);
+    uint16_t bgCol = dataIsOld ? getDataOldColor() : getDisplayColorByBGValue(lastReading);
     DisplayManager.setTextColor(bgCol);
     DisplayManager.printText(curBg, 6, bgStr.c_str(), TEXT_ALIGNMENT::LEFT, 2, false);
 
     if (!readings.empty()) showTrendArrow(lastReading, curArr, 1, dataIsOld, false, false);
     if (deltaStr.length() > 0) {
-        uint16_t dCol = dataIsOld ? (uint16_t)COLOR_GRAY : (towards ? (uint16_t)COLOR_GREEN : (uint16_t)COLOR_YELLOW);
+        uint16_t dCol = dataIsOld ? getDataOldColor() : (towards ? (uint16_t)COLOR_GREEN : (uint16_t)COLOR_YELLOW);
         DisplayManager.setTextColor(dCol);
         DisplayManager.printText(curDelta, 6, deltaStr.c_str(), TEXT_ALIGNMENT::LEFT, 2, false);
     }

@@ -88,16 +88,17 @@ void DisplayManager_::setup() {
 }
 
 void DisplayManager_::applySettings() {
-    int displayBrightness = 70;
-
-    if (SettingsManager.settings.brightness_mode == BRIGHTNES_MODE::MANUAL) {
-        // make brightness grow logarithmically
-        float t = constrain(SettingsManager.settings.brightness_level / 10.0f, 0.0f, 1.0f);
-        const float gamma = 2.2f;       // raise to 2.4–2.6 for darker lows
-        float curved = powf(t, gamma);  // 0..1, biased toward 0
-
-        displayBrightness = (int)lroundf(MIN_BRIGHTNESS + curved * (MAX_BRIGHTNESS - MIN_BRIGHTNESS));
+    if (SettingsManager.settings.brightness_mode != BRIGHTNES_MODE::MANUAL) {
+        // Keep the current brightness until the light-sensor loop updates automatic mode.
+        return;
     }
+
+    // make brightness grow logarithmically
+    float t = constrain(SettingsManager.settings.brightness_level / 10.0f, 0.0f, 1.0f);
+    const float gamma = 2.2f;       // raise to 2.4–2.6 for darker lows
+    float curved = powf(t, gamma);  // 0..1, biased toward 0
+
+    int displayBrightness = (int)lroundf(MIN_BRIGHTNESS + curved * (MAX_BRIGHTNESS - MIN_BRIGHTNESS));
 
 #ifdef DEBUG_BRIGHTNESS
     DEBUG_PRINTLN(
@@ -192,6 +193,20 @@ void DisplayManager_::drawBitmap(
     }
 }
 
+void DisplayManager_::drawIndexedSprite(
+    int16_t x, int16_t y, const uint8_t sprite[], int16_t w, int16_t h, const uint16_t palette[]) {
+    for (int16_t row = 0; row < h; row++) {
+        for (int16_t col = 0; col < w; col++) {
+            uint8_t paletteIndex = pgm_read_byte(&sprite[row * w + col]);
+            if (paletteIndex == 0) {
+                continue;  // transparent, leave whatever is already on the matrix
+            }
+            uint16_t color = pgm_read_word(&palette[paletteIndex - 1]);
+            matrix->drawPixel(x + col, y + row, color);
+        }
+    }
+}
+
 void DisplayManager_::scrollColorfulText(String message) {
     auto finalPosition = -1 * getTextWidth(message.c_str(), 1);
 
@@ -229,14 +244,27 @@ void DisplayManager_::HSVtext(int16_t x, int16_t y, const char* text, bool clear
         matrix->show();
 }
 
+uint16_t DisplayManager_::rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
+}
+
+uint16_t DisplayManager_::hsvToRgb565(uint8_t hue) {
+    uint8_t region = hue / 43, rem = (hue - (region * 43)) * 6, q = 255 - rem, t = rem;
+    switch (region) {
+        case 0: return rgb565(255, t, 0);
+        case 1: return rgb565(q, 255, 0);
+        case 2: return rgb565(0, 255, t);
+        case 3: return rgb565(0, q, 255);
+        case 4: return rgb565(t, 0, 255);
+        default: return rgb565(255, 0, q);
+    }
+}
+
 void DisplayManager_::showFatalError(String errorMessage) {
     DEBUG_PRINTF("Fatal error: %s\n", errorMessage.c_str());
-    // currentFont is global state left behind by whichever face rendered last.
-    // The large font (yAdvance 8) at the y=6 baseline used below would be pushed
-    // up and clipped ("shifted to the top"), so pin the small font (yAdvance 6)
-    // that this baseline is centered for.
-    setFont(FONT_TYPE::SMALL);
-    setTextColor(COLOR_GRAY);
+    // White on the fatal-error screen: gray can be invisible at minimum brightness.
+    setFont(FONT_TYPE::MEDIUM);
+    setTextColor(COLOR_WHITE);
 
     auto startMills = millis();
 

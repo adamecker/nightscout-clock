@@ -2,17 +2,19 @@
 #define BGDISPLAYFACEUNICORN_H
 
 #include "BGDisplayFaceTextBase.h"
+#include "BGDisplayFaceWithAge.h"
+#include "BGSource.h"
+#include "enums.h"
 
-class BGDisplayFaceUnicorn : public BGDisplayFaceTextBase {
+// The unicorn's hair is rainbow for normal readings and uses warning/urgent colors otherwise.
+// When data is old, the unicorn uses the configured stale color, keeping its eye dark.
+// The glucose value is shown as a smaller readout beside it.
+class BGDisplayFaceUnicorn : public BGDisplayFaceTextBase, public BGDisplayFaceWithAge {
 public:
     void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
-    bool needsFrequentRefresh() const override;
-    unsigned long getFrequentRefreshIntervalMs() const override;
-    void onActivate() const override;
 
 private:
-    void drawUnicorn(int16_t x, int16_t y, uint8_t frame) const;
-    void drawNyanRainbow(int16_t startX, int16_t endX, uint8_t waveTick) const;
+    const uint16_t* getManePalette(BG_LEVEL level) const;
 };
 
-#endif
+#endif  // BGDISPLAYFACEUNICORN_H

@@ -25,10 +25,6 @@
                 {
                     "path": "https://adamecker.github.io/nightscout-clock/artifacts/littlefs.bin",
                     "offset": 2162688
-                },
-                {
-                    "path": "littlefs.bin",
-                    "offset": 2162688
                 }
             ]
         }

@@ -8,33 +8,33 @@ unsigned long lastScrollMs = 0;
 unsigned long lastRefreshMs = 0;
 String cachedText = "";
 uint16_t textColor = COLOR_CYAN;
+} // namespace
 
-void updateDiagnosticText(const std::list<GlucoseReading>& readings) {
+void BGDisplayFaceDiagnostics::updateDiagnosticText(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     int rssi = WiFi.RSSI();
     String wifiStr = WiFi.isConnected() ? (String(rssi) + "dBm") : "OFFLINE";
 
     int ageMin = 0;
-    int sgvVal = 0;
+    String valStr = "---";
     if (!readings.empty()) {
         ageMin = readings.back().getSecondsAgo() / 60;
-        sgvVal = readings.back().sgv;
+        valStr = getPrintableReading(readings.back().sgv);
     }
-    
+
     uint32_t freeHeap = ESP.getFreeHeap() / 1024;
 
     cachedText = "WIFI: " + wifiStr +
-                 " | VAL: " + String(sgvVal) +
+                 " | VAL: " + valStr +
                  " | AGE: " + String(ageMin) + "m" +
                  " | BAT: " + String(BATTERY_PERCENT) + "%" +
                  " | RAM: " + String(freeHeap) + "KB ";
 
-    if (!WiFi.isConnected() || ageMin > 15) {
+    if (!WiFi.isConnected() || dataIsOld) {
         textColor = COLOR_RED;
     } else {
         textColor = COLOR_CYAN;
     }
 }
-} // namespace
 
 void BGDisplayFaceDiagnostics::onActivate() const {
     scrollX = 32;
@@ -44,12 +44,12 @@ void BGDisplayFaceDiagnostics::onActivate() const {
 }
 
 void BGDisplayFaceDiagnostics::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
-    showDiagnosticsTicker(readings);
+    showDiagnosticsTicker(readings, dataIsOld);
 }
 
 void BGDisplayFaceDiagnostics::showNoData() const {
     std::list<GlucoseReading> empty;
-    showDiagnosticsTicker(empty);
+    showDiagnosticsTicker(empty, true);
 }
 
 bool BGDisplayFaceDiagnostics::needsFrequentRefresh() const {
@@ -60,10 +60,10 @@ unsigned long BGDisplayFaceDiagnostics::getFrequentRefreshIntervalMs() const {
     return 40;
 }
 
-void BGDisplayFaceDiagnostics::showDiagnosticsTicker(const std::list<GlucoseReading>& readings) const {
+void BGDisplayFaceDiagnostics::showDiagnosticsTicker(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     unsigned long now = millis();
     if (now - lastRefreshMs > 5000 || cachedText.length() == 0) {
-        updateDiagnosticText(readings);
+        updateDiagnosticText(readings, dataIsOld);
         lastRefreshMs = now;
     }
 

@@ -27,7 +27,7 @@ void BGDisplayFaceBatteryUptime::showNoData() const { showSystemInfo(); }
 
 bool BGDisplayFaceBatteryUptime::needsFrequentRefresh() const { return true; }
 
-unsigned long BGDisplayFaceBatteryUptime::getFrequentRefreshIntervalMs() const { return 10000; }
+unsigned long BGDisplayFaceBatteryUptime::getFrequentRefreshIntervalMs() const { return 60000; }
 
 void BGDisplayFaceBatteryUptime::showSystemInfo() const {
     DisplayManager.clearMatrix(false);
@@ -42,8 +42,6 @@ void BGDisplayFaceBatteryUptime::showSystemInfo() const {
 
     DisplayManager.setTextColor(COLOR_WHITE);
     DisplayManager.printText(31, 7, uptimeText.c_str(), TEXT_ALIGNMENT::RIGHT, 2, false);
-
-    DisplayManager.update();
 }
 
 void BGDisplayFaceBatteryUptime::showBatteryIndicator() const {

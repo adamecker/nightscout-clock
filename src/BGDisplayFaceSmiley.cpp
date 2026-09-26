@@ -140,9 +140,9 @@ void BGDisplayFaceSmiley::showReadings(
             break;
     }
 
-    // Old data is greyed out regardless of the level (matches the other faces).
+    // Old data uses the configured old-data color regardless of the level.
     if (dataIsOld) {
-        faceColor = COLOR_GRAY;
+        faceColor = getDataOldColor();
     }
 
     DisplayManager.clearMatrix(false);
@@ -154,21 +154,19 @@ void BGDisplayFaceSmiley::showReadings(
 
     // Big reading, colored by level, centered beside the face.
     if (dataIsOld) {
-        DisplayManager.setTextColor(BG_COLOR_OLD);
+        DisplayManager.setTextColor(getDataOldColor());
     } else {
         SetDisplayColorByBGValue(lastReading);
     }
     drawCenteredReadingRight(getPrintableReading(lastReading.sgv));
-
-    DisplayManager.update();
 }
 
 void BGDisplayFaceSmiley::showNoData() const {
+    uint16_t noDataColor = getDataOldColor();
     DisplayManager.clearMatrix(false);
-    DisplayManager.drawBitmap(0, 0, face_disc, SMILEY_SIZE, SMILEY_SIZE, fadeColor(COLOR_GRAY), false);
+    DisplayManager.drawBitmap(0, 0, face_disc, SMILEY_SIZE, SMILEY_SIZE, fadeColor(noDataColor), false);
     DisplayManager.drawBitmap(0, 0, features_neutral, SMILEY_SIZE, SMILEY_SIZE, COLOR_BLACK, false);
-    DisplayManager.setTextColor(COLOR_GRAY);
+    DisplayManager.setTextColor(noDataColor);
     String noDataText = SettingsManager.settings.bg_units == BG_UNIT::MMOLL ? "--.-" : "---";
     drawCenteredReadingRight(noDataText);
-    DisplayManager.update();
 }

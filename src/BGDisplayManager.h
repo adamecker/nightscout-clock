@@ -19,10 +19,13 @@
 #include "BGDisplayFaceSmiley.h"
 #include "BGDisplayFaceRainbowSparkle.h"
 #include "BGDisplayFaceSmileyPlusStats.h"
-#include "BGDisplayFaceUnicorn.h"
+#include "BGDisplayFaceNyanUnicorn.h"
 #include "BGDisplayFaceTitleScroll.h"
+#include "BGDisplayFaceTimeOnly.h"
+#include "BGDisplayFaceUnicorn.h"
 #include "BGDisplayFaceValueAndDiff.h"
 #include "BGSource.h"
+#include "SettingsSchedule.h"
 
 struct GlucoseInterval {
     int low_boundary;
@@ -87,12 +90,19 @@ private:
     bool faceCycleActive = false;
     bool faceCycleTimerStarted = false;
     unsigned long lastFaceCycleMillis = 0;
-    std::vector<int> faceCycleFaces;
-    unsigned long long lastRefreshEpoch = 0;
+    std::vector<int> activeFaces;
+    std::vector<FaceScheduleEntry> faceSchedule;  // sorted by start time
+    bool faceScheduleActive = false;
+    int appliedScheduleEntry = -1;
+    int lastScheduleMinuteOfDay = -1;
     unsigned long lastFrequentRefreshMillis = 0;
+    unsigned long long lastRefreshEpoch = 0;
 
-    void configureFaceCycle();
+    void configureActiveFaces();
     void updateFaceCycle();
+    void configureFaceSchedule();
+    void updateFaceSchedule();
+    void applyScheduleEntry(const FaceScheduleEntry& entry);
     void resetFaceCycleTimer();
     void runRenderCycle(RenderReason reason, const tm& timeInfo);
     void commitRenderedState(bool dataIsOld);
@@ -108,6 +118,7 @@ public:
 
     std::map<int, String> getFaces();
     int getCurrentFaceId();
+    bool suppressesNewAlarms() const;
 
     void setFace(int id);
     void showNextFace();
@@ -115,8 +126,6 @@ public:
     void toggleSchoolMode();
     bool isSchoolMode() const;
     void setSchoolMode(bool active);
-
-    static void drawTimerBlocks(GlucoseReading lastReading, int width, int xPosition, int yPosition);
 };
 
 extern BGDisplayManager_& bgDisplayManager;

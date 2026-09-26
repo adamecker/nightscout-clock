@@ -22,26 +22,7 @@ const uint8_t PROGMEM SPARKLE_DIZZY[] = {
     0b00111100, 0b01000010, 0b10011001, 0b00100100,
     0b10000001, 0b01011010, 0b01000010, 0b00111100
 };
-
-uint16_t hsvToRgb565(uint8_t hue) {
-    uint8_t region = hue / 43;
-    uint8_t remainder = (hue - (region * 43)) * 6;
-    uint8_t q = 255 - remainder;
-    uint8_t t = remainder;
-    uint8_t r = 0, g = 0, b = 0;
-    switch (region) {
-        case 0: r = 255; g = t;   b = 0;   break;
-        case 1: r = q;   g = 255; b = 0;   break;
-        case 2: r = 0;   g = 255; b = t;   break;
-        case 3: r = 0;   g = q;   b = 255; break;
-        case 4: r = t;   g = 0;   b = 255; break;
-        default: r = 255; g = 0;   b = q;   break;
-    }
-    return ((uint16_t)(r & 0xF8) << 8) | ((uint16_t)(g & 0xFC) << 3) | (b >> 3);
-}
 } // namespace
-
-void BGDisplayFaceRainbowSparkle::onActivate() const {}
 
 void BGDisplayFaceRainbowSparkle::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const {
     auto lastReading = readings.back();
@@ -76,7 +57,7 @@ void BGDisplayFaceRainbowSparkle::showAnimatedReading(const GlucoseReading& read
     }
 
     if (dataIsOld) {
-        faceColor = COLOR_GRAY;
+        faceColor = getDataOldColor();
     }
 
     DisplayManager.drawBitmap(0, 0, faceBmp, 8, 8, faceColor, false);
@@ -90,7 +71,7 @@ void BGDisplayFaceRainbowSparkle::showAnimatedReading(const GlucoseReading& read
     for (uint8_t i = 0; i < textLen; i++) {
         char buf[2] = {readingToDisplay[i], '\0'};
         uint8_t charHue = hueOffset + (i * 35);
-        uint16_t color = dataIsOld ? (uint16_t)COLOR_GRAY : hsvToRgb565(charHue);
+        uint16_t color = dataIsOld ? getDataOldColor() : DisplayManager.hsvToRgb565(charHue);
         DisplayManager.setTextColor(color);
         DisplayManager.printText(x, 6, buf, TEXT_ALIGNMENT::LEFT, 2, false);
         x += DisplayManager.getTextWidth(buf, 2);
