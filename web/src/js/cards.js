@@ -846,7 +846,7 @@ function alertWindows(a) {
  * @returns {HTMLElement}
  */
 function systemTab() {
-    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), versionCard())
+    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), versionCard())
 }
 
 /**
@@ -974,6 +974,60 @@ async function loadSettingsFile(input) {
 }
 
 /**
+ * Build the network firmware/filesystem update card: pick a .bin built from this
+ * repo, upload it to the matching endpoint, watch progress, and let the clock reboot.
+ * @returns {HTMLElement}
+ */
+function updateCard() {
+    const fwInput = el("input", { type: "file", accept: ".bin", hidden: true })
+    const fsInput = el("input", { type: "file", accept: ".bin", hidden: true })
+    const bar = el("progress", { id: "ota_bar", max: "100", value: "0", hidden: true })
+    const status = el("p.help", { id: "ota_status" }, "The clock reboots into the new image after a successful upload.")
+    fwInput.addEventListener("change", () => uploadOta(fwInput, "/api/update/firmware", "firmware"))
+    fsInput.addEventListener("change", () => uploadOta(fsInput, "/api/update/filesystem", "filesystem"))
+    return card("Firmware update", "Update the clock over the network: firmware.bin for the app, littlefs.bin for the settings page. Uploaded to separate endpoints and validated before reboot.", el("div.stack",
+        el("div.row",
+            el("button.btn", { type: "button", onclick: () => fwInput.click() }, icon("upload"), "Upload firmware", fwInput),
+            el("button.btn", { type: "button", onclick: () => fsInput.click() }, icon("upload"), "Upload filesystem", fsInput)),
+        bar, status), { id: "card_update" })
+}
+
+/**
+ * Upload a firmware or filesystem image with a progress bar, then report the result.
+ * Uses XMLHttpRequest because fetch has no upload progress events.
+ * @param {HTMLInputElement} input - File picker holding the image.
+ * @param {string} url - Update endpoint matching the image type.
+ * @param {string} label - Human-readable image type for status messages.
+ * @returns {void}
+ */
+function uploadOta(input, url, label) {
+    const file = input.files[0]
+    input.value = ""
+    if (!file) return
+    const bar = $("#ota_bar"), status = $("#ota_status")
+    bar.hidden = false
+    bar.value = 0
+    status.textContent = `Uploading ${label} (${file.name})…`
+    const done = msg => { bar.hidden = true; status.textContent = msg }
+    const xhr = new XMLHttpRequest()
+    xhr.open("POST", url)
+    xhr.upload.onprogress = e => { if (e.lengthComputable) bar.value = Math.round(e.loaded * 100 / e.total) }
+    xhr.onload = () => {
+        if (xhr.status === 401) return (done("Login required: unlock the settings page first."), toast("Login required.", "bad"))
+        let msg = `The clock answered ${xhr.status}.`
+        try {
+            const r = JSON.parse(xhr.responseText)
+            msg = r.status === "ok" ? `${label} uploaded, the clock is rebooting…` : `Update failed: ${r.error || r.status}`
+        } catch (e) { /* keep the default message */ }
+        done(msg)
+    }
+    xhr.onerror = () => done("Upload failed: the connection was lost.")
+    const fd = new FormData()
+    fd.append("file", file, file.name)
+    xhr.send(fd)
+}
+
+/**
  * Build current/latest firmware labels and update information from the shared version state.
  * @returns {HTMLElement}
  */
@@ -991,8 +1045,8 @@ function versionCard() {
 function versionStatusNodes() {
     const v = ui.versions
     if (v.update) {
-        return [el("a", { href: "https://ktomy.github.io/nightscout-clock/", target: "_blank", rel: "noopener noreferrer" }, `Update to ${v.latest}`), " · ",
-            el("a", { href: "https://github.com/ktomy/nightscout-clock/tree/main?tab=readme-ov-file#changes", target: "_blank", rel: "noopener noreferrer" }, "Changes")]
+        return [el("a", { href: "https://adamecker.github.io/nightscout-clock/", target: "_blank", rel: "noopener noreferrer" }, `Update to ${v.latest}`), " · ",
+            el("a", { href: "https://github.com/adamecker/nightscout-clock/tree/main?tab=readme-ov-file#changes", target: "_blank", rel: "noopener noreferrer" }, "Changes")]
     }
     return [v.status || "Checking for updates…"]
 }

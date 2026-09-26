@@ -4,7 +4,9 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
+#include <Update.h>
 #include <WiFi.h>
+#include <esp_partition.h>
 #include <esp_system.h>
 
 #include "BGSourceManager.h"
@@ -224,6 +226,111 @@ bool tryConnectToWiFi(String wifi_type, String ssid, String username, String pas
     Serial.println();
 
     return false;
+}
+
+// --- Authenticated network OTA updates -------------------------------------
+// Two distinct update types, each with its own endpoint and validation:
+//   POST /api/update/firmware   -> U_FLASH  (must be an ESP32 app image, magic 0xE9)
+//   POST /api/update/filesystem -> U_SPIFFS (must be exactly the LittleFS partition size)
+// Both require web authentication when it is enabled. Auth is checked when the
+// upload starts; the final response (and reboot) happens in handleUpdateRequest
+// after the last chunk is processed.
+
+static size_t otaFilesystemPartitionSize() {
+    const esp_partition_t* part =
+        esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, NULL);
+    return part ? part->size : 0;
+}
+
+void ServerManager_::handleUpdateUpload(AsyncWebServerRequest* request, const String& filename,
+                                        size_t index, uint8_t* data, size_t len, bool final,
+                                        int command) {
+    if (index == 0) {
+        otaUpdateCommand = command;
+        otaUpdateAuthFailed = false;
+        otaUpdateWritten = 0;
+        otaUpdateError = "";
+        // Non-sending check: the 401 (if any) goes out in handleUpdateRequest.
+        if (!isRequestAuthenticated(request)) {
+            otaUpdateAuthFailed = true;
+            return;
+        }
+        if (command == U_FLASH) {
+            // Reject a wrong-type file (e.g. a filesystem image) uploaded here.
+            if (len == 0 || data[0] != 0xE9) {
+                otaUpdateError = "not a firmware image";
+                return;
+            }
+        } else if (!filename.endsWith(".bin")) {
+            otaUpdateError = "filesystem image must be a .bin file";
+            return;
+        }
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN, command)) {
+            otaUpdateError = Update.errorString();
+            return;
+        }
+        DEBUG_PRINTF("OTA %s update started: %s\n", command == U_FLASH ? "firmware" : "filesystem",
+                     filename.c_str());
+    }
+    if (otaUpdateAuthFailed || otaUpdateError.length() > 0) {
+        return;  // drain the remaining chunks without writing
+    }
+    if (len > 0) {
+        if (Update.write(data, len) != len) {
+            otaUpdateError = Update.errorString();
+            return;
+        }
+        otaUpdateWritten += len;
+    }
+    if (final) {
+        if (command == U_SPIFFS) {
+            // mklittlefs images are always exactly the partition size; anything
+            // else is the wrong file (e.g. a firmware image on this endpoint).
+            size_t fsSize = otaFilesystemPartitionSize();
+            if (fsSize == 0 || otaUpdateWritten != fsSize) {
+                otaUpdateError = "filesystem image size mismatch";
+                Update.abort();
+                return;
+            }
+        }
+        if (!Update.end(true)) {
+            otaUpdateError = Update.errorString();
+        } else {
+            DEBUG_PRINTF("OTA %s update written: %u bytes\n", command == U_FLASH ? "firmware" : "filesystem",
+                         otaUpdateWritten);
+        }
+    }
+}
+
+void ServerManager_::handleUpdateRequest(AsyncWebServerRequest* request) {
+    if (!enforceAuthentication(request)) {
+        return;
+    }
+    int command = otaUpdateCommand;
+    String error = otaUpdateError;
+    otaUpdateCommand = -1;
+    otaUpdateError = "";
+
+    if (command < 0) {
+        request->send(400, "application/json", "{\"status\": \"error\", \"error\": \"no file uploaded\"}");
+        return;
+    }
+    if (error.length() > 0) {
+        String body = "{\"status\": \"error\", \"error\": \"";
+        body += error;
+        body += "\"}";
+        request->send(400, "application/json", body);
+        return;
+    }
+    request->send(200, "application/json", "{\"status\": \"ok\"}");
+    // Reboot into the new image after the response has been flushed.
+    xTaskCreate(
+        [](void*) {
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            LittleFS.end();
+            ESP.restart();
+        },
+        "ota_restart", 2048, NULL, 1, NULL);
 }
 
 IPAddress ServerManager_::startWifi() {
@@ -604,6 +711,24 @@ void ServerManager_::setupWebServer(IPAddress ip) {
         delay(1000);
         SettingsManager.factoryReset();
     });
+
+    // Authenticated network OTA updates. Firmware and the LittleFS filesystem
+    // image are distinct update types with separate endpoints and validation;
+    // see handleUpdateUpload. Requires the dual-OTA partition layout.
+    ws->on(
+        "/api/update/firmware", HTTP_POST,
+        [this](AsyncWebServerRequest* request) { handleUpdateRequest(request); },
+        [this](AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data,
+               size_t len, bool final) {
+            handleUpdateUpload(request, filename, index, data, len, final, U_FLASH);
+        });
+    ws->on(
+        "/api/update/filesystem", HTTP_POST,
+        [this](AsyncWebServerRequest* request) { handleUpdateRequest(request); },
+        [this](AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data,
+               size_t len, bool final) {
+            handleUpdateUpload(request, filename, index, data, len, final, U_SPIFFS);
+        });
 
     // api call which returns status (isConnected, internet is reacheable, is in AP mode, bg source type
     // and status)

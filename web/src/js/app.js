@@ -286,7 +286,7 @@ async function loadVersions() {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), 5000)
     try {
-        const res = await fetch("https://raw.githubusercontent.com/ktomy/nightscout-clock/refs/heads/main/data/version.txt?" + Date.now(), { cache: "no-store", signal: ctrl.signal })
+        const res = await fetch("https://raw.githubusercontent.com/adamecker/nightscout-clock/refs/heads/main/data/version.txt?" + Date.now(), { cache: "no-store", signal: ctrl.signal })
         v.latest = res.ok ? (await res.text()).trim() : ""
     } catch (e) {
         v.latest = ""

@@ -57,6 +57,24 @@ Thanks [@CallumMcK](https://github.com/CallumMcK)
 
 Thanks [@CallumMcK](https://github.com/CallumMcK)
 
+### Over-the-air (network) update
+
+Once the clock runs a firmware with OTA support (see below), it can update itself over the network without USB:
+
+1. Build the artifacts: `bash scripts/build.sh --all` (produces `.pio/build/ulanzi_debug/firmware.bin` and `littlefs.bin`).
+2. Open the clock's web interface (`http://<clock-ip>/`, System tab → **Firmware update**), log in if web authentication is enabled.
+3. **Upload firmware** with `firmware.bin`, or **Upload filesystem** with `littlefs.bin`. The clock validates the image (firmware must be a real ESP32 app image; the filesystem image must match the LittleFS partition size) and reboots into it.
+4. Prefer scripting? Log in once via the web UI, then reuse the cookie: `curl -b "auth_token=<token>" -F "file=@firmware.bin" http://<clock-ip>/api/update/firmware` (same for `/api/update/filesystem` with `littlefs.bin`).
+
+Firmware and the settings-page filesystem are separate update types with separate endpoints, so update both when a release changes the web UI.
+
+### One-time: enabling OTA partitions
+
+OTA needs two app slots in flash. Switching the partition layout wipes the device, so this is done once over USB:
+
+1. `bash scripts/build.sh --all --upload` (flashes bootloader, the new dual-OTA partition table, firmware, and LittleFS).
+2. From then on, updates go over the network as described above; USB is only the recovery path.
+
 ## More information for people who needs it
 
 Nightscout Clock is a custom firmware for Ulanzi TC001. It can also run (with minor changes) on AWTRIX-Light custom hardware, so if you need a bigger display, feel free to research.

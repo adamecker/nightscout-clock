@@ -28,6 +28,16 @@ private:
     String webAuthToken;
     unsigned long webAuthTokenIssuedMs = 0;
 
+    // Authenticated network OTA update state (POST /api/update/firmware and
+    // POST /api/update/filesystem stream uploads into the Arduino Update class)
+    int otaUpdateCommand = -1;
+    bool otaUpdateAuthFailed = false;
+    size_t otaUpdateWritten = 0;
+    String otaUpdateError;
+    void handleUpdateUpload(AsyncWebServerRequest* request, const String& filename, size_t index,
+                            uint8_t* data, size_t len, bool final, int command);
+    void handleUpdateRequest(AsyncWebServerRequest* request);
+
 public:
     static ServerManager_& getInstance();
     void setup();
