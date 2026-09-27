@@ -1,0 +1,60 @@
+name: Deploy site on simulator changes
+
+# Publishes the GitHub Pages site (browser installer + face simulator) when
+# simulator/ or www/ changes on main, without cutting a firmware release.
+# Firmware binaries are reused from the most recent successful release build,
+# so the installer keeps serving the latest released firmware.
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "simulator/**"
+      - "www/**"
+      - "scripts/assemble_pages.sh"
+      - ".github/workflows/deploy-site.yml"
+
+jobs:
+  deploy:
+    name: Deploy site to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Download latest release firmware artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN_ID=$(gh run list --workflow build_release.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "::error::No successful 'Build and deploy on Github Pages' run found. Publish a v-* release first."
+            exit 1
+          fi
+          echo "Reusing firmware artifacts from run $RUN_ID"
+          gh run download "$RUN_ID" --name firmware --dir artifacts
+      - name: Assemble Pages site
+        run: bash scripts/assemble_pages.sh artifacts
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "www"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

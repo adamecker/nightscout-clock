@@ -8,3 +8,9 @@
 .vscode/ipch
 /log/*
 /logs/*
+# Generated at Pages-deploy time by scripts/assemble_pages.sh; never commit.
+/www/artifacts/
+/www/debug/artifacts/
+/www/debug/manifest.json
+/www/simulator/
+/www/update.json
