@@ -48,7 +48,10 @@ jobs:
             exit 1
           fi
           echo "Reusing firmware artifacts from run $RUN_ID"
-          gh run download "$RUN_ID" --name firmware --dir artifacts
+          if ! gh run download "$RUN_ID" --name firmware --dir artifacts; then
+            echo "::error::Could not download the 'firmware' artifact from run $RUN_ID (it may have expired). Publish a new v-* release first."
+            exit 1
+          fi
       - name: Assemble Pages site
         run: bash scripts/assemble_pages.sh artifacts
       - name: Upload artifact
