@@ -97,6 +97,7 @@ private:
     int lastScheduleMinuteOfDay = -1;
     unsigned long lastFrequentRefreshMillis = 0;
     unsigned long long lastRefreshEpoch = 0;
+    bool brightnessOverlayWasActive = false;
 
     void configureActiveFaces();
     void updateFaceCycle();
