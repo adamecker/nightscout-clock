@@ -81,7 +81,7 @@ public:
     // Optional heartbeat: the clock POSTs a small JSON status on a schedule.
     // Works with healthchecks.io, ntfy.sh, or any webhook receiver.
     String healthcheck_url;
-    int healthcheck_interval_hours = 12;
+    int healthcheck_interval_hours = 1;
 };
 
 #endif

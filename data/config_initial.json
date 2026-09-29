@@ -70,5 +70,5 @@
     "ota_auto_update": false,
     "ota_auto_update_hour": 3,
     "healthcheck_url": "",
-    "healthcheck_interval_hours": 12
+    "healthcheck_interval_hours": 1
 }

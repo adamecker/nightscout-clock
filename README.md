@@ -70,7 +70,7 @@ Firmware and the settings-page filesystem are separate update types with separat
 
 **Automatic self-update.** In the System tab → **Automatic updates**, enable "Check for and install updates automatically". The clock then checks the release manifest about 3 minutes after every boot and once a day at the configured hour (its local time), and installs new images itself — firmware and filesystem as needed. Note: the after-boot check runs on *every* restart while this is on, so pressing "Save and restart" in the web UI can itself install a pending update a few minutes later. Made for clocks you can't reach on their own network: it only needs outbound internet. Updates always keep your settings — network, selected face, school mode, and the custom MAC address all survive — and the clock reports what it installed in its status heartbeat (below).
 
-**Status heartbeat (remote monitoring).** In the same card, set a heartbeat URL and the clock will POST a small JSON status (firmware version, uptime, WiFi signal, IP address, school mode, selected face, display on/off, free heap, battery percent and raw ADC reading, BG source, BG source status, last glucose value, and seconds since the last reading — `-1` if no reading yet) on a schedule plus shortly after every boot. Point it at [healthchecks.io](https://healthchecks.io) (free) to get alerted if the clock ever goes quiet, or at [ntfy.sh](https://ntfy.sh) to receive the heartbeat as phone notifications — no server or inbound connection needed. After a remote update, the heartbeat's `version` field confirms what the clock is running without visiting it.
+**Status heartbeat (remote monitoring).** In the same card, set a heartbeat URL and the clock will POST a small JSON status (firmware version, uptime, WiFi signal, IP address, school mode, selected face, display on/off, free heap, battery percent and raw ADC reading, BG source, BG source status, last glucose value, and seconds since the last reading — `-1` if no reading yet) every hour by default (adjustable from 1 to 168 hours) plus shortly after every boot. Point it at [healthchecks.io](https://healthchecks.io) (free) to get alerted if the clock ever goes quiet, or at [ntfy.sh](https://ntfy.sh) to receive the heartbeat as phone notifications — no server or inbound connection needed. If you use healthchecks.io, configure the check with **Period: 1 hour** and **Grace: 1 hour**: the clock is then marked down after about two hours without a ping, which tolerates a single missed ping (a brief WiFi blip) without flapping, while still alerting you the same night if the clock dies. After a remote update, the heartbeat's `version` field confirms what the clock is running without visiting it.
 
 ### One-time: enabling OTA partitions
 
@@ -234,6 +234,15 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - ...more... (if you are the author of a CGM data collecting app/service and you want your data to be displayed on the Nightscout Clock, please contact me)
 
 ## Changes
+
+### 1.5.1
+
+- Filesystem OTA: the settings backup is now restored with verification — the clock writes `/config.json`, reads it back, and parses it as JSON before accepting the update; a failed restore removes the partial file so boot falls back to the backup layer instead of choking. `/config.bak` is re-established on the fresh image.
+- Wi-Fi recovery: if the loaded config parses but has an empty SSID (e.g. a factory template left behind by a failed restore), the clock now recovers the last known-good Wi-Fi credentials from NVS instead of dropping off the network. Deliberately clearing Wi-Fi or factory-resetting also clears the NVS copy, so the fallback only fires on unintended loss.
+- Settings import (web UI "Load settings"): the factory template now includes all supported keys (`healthcheck_url`, `healthcheck_interval_hours`, `medtrum_email`, `medtrum_password`, `ota_auto_update`, `ota_auto_update_hour`), so importing a backup no longer silently drops the heartbeat, Medtrum, and auto-update settings.
+- Critter faces: brightened the darkest body colors (brown, blue-gray, purple, pure blue) and two dark accents so sprites stay visible when the display dims at night. Applies to Poop, Owl, Monkey, Turkey, Narwhal, Whale, Octopus, Bat, Witch, Dog, and Turtle; the simulator was updated to match.
+- Web UI: stripped code comments from the generated page at build time, shrinking `index.html.gz` from ~45.7 KB to ~30.4 KB (validated: JS still parses and all 1,577 string literals are byte-identical).
+- Status heartbeat: the default heartbeat interval is now 1 hour (was 12), so a silent clock is noticed the same night instead of half a day later. Hourly pings stay within healthchecks.io's free tier; when setting up the check there, use Period 1 hour and Grace 1 hour.
 
 ### 1.5.0
 

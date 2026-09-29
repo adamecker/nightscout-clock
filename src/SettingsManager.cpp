@@ -375,7 +375,7 @@ bool SettingsManager_::loadSettingsFromFile() {
 
     // Healthcheck heartbeat
     settings.healthcheck_url = (*doc)["healthcheck_url"].as<String>();
-    settings.healthcheck_interval_hours = (*doc)["healthcheck_interval_hours"] | 12;
+    settings.healthcheck_interval_hours = (*doc)["healthcheck_interval_hours"] | 1;
     settings.web_auth_password = (*doc)["web_auth_password"].as<String>();
 
     delete doc;
