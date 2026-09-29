@@ -38,8 +38,22 @@ UNICORN_SPRITE = [
     0,0,0,2,2,2,2,2,4,5,6,7,
 ]
 PAL_N = [0xFE87,0xF79D,0x18C3,0x4D5F,0x5EAD,0xFCC7,0xFA78,0x9AFE]
+# Critter sprites (12x8, palette indices 0-3). 1=body (level color), 2=accent, 3=eye.
+CRITTERS = {
+ 'Poop':   {'sprite':[0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,3,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0],'body':0x8A22,'accent':0x71A0,'eye':0x0000},
+ 'Cat':    {'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0],'body':0xFC00,'accent':0xF81F,'eye':0x0000},
+ 'Dog':    {'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,2,2,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0],'body':0xFD20,'accent':0x8A22,'eye':0x0000},
+ 'Frog':   {'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,3,1,1,1,1,1,1,3,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0x07E0,'accent':0x87F0,'eye':0x0000},
+ 'Panda':  {'sprite':[0,0,2,2,0,0,0,0,2,2,0,0,0,2,2,1,1,1,1,1,1,2,2,0,0,2,1,1,1,1,1,1,1,1,2,0,0,1,2,2,1,1,1,1,2,2,1,0,0,1,2,2,1,1,1,1,2,2,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0],'body':0xFFFF,'accent':0x0000,'eye':0x0000},
+ 'Penguin':{'sprite':[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,2,1,1,1,1,2,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,2,2,1,1,1,0,0,1,1,1,2,2,2,2,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0],'body':0x0000,'accent':0xFFFF,'eye':0xFFFF},
+ 'Owl':    {'sprite':[0,0,1,1,0,0,0,0,1,1,0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,3,3,1,1,1,1,3,3,1,0,0,1,3,3,1,1,1,1,3,3,1,0,0,1,1,1,1,1,2,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0],'body':0x8A22,'accent':0xFD20,'eye':0x0000},
+ 'Fox':    {'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0xFC00,'accent':0xFFFF,'eye':0x0000},
+ 'Bear':   {'sprite':[0,0,1,1,0,0,0,0,1,1,0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0x8A22,'accent':0xFD20,'eye':0x0000},
+ 'Bunny':  {'sprite':[0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,3,1,1,1,1,3,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0xFFFF,'accent':0xF81F,'eye':0x0000},
+ 'Pig':    {'sprite':[0,0,1,1,0,0,0,0,1,1,0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,2,2,2,2,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0xFC9F,'accent':0xF81F,'eye':0x0000},
+}
 
-JS_DATA = "const AW=%s;\nconst MU=%s;\nconst SMILEY=%s;\nconst ARROWS=%s;\nconst SPARK=%s;\nconst USPRITE=%s;\nconst UPALN=%s;\n" % (
+JS_DATA = "const AW=%s;\nconst MU=%s;\nconst SMILEY=%s;\nconst ARROWS=%s;\nconst SPARK=%s;\nconst USPRITE=%s;\nconst UPALN=%s;\nconst CRITTERS=%s;\n" % (
     json.dumps(AW, separators=(',',':')),
     json.dumps(MU, separators=(',',':')),
     json.dumps(SMILEY, separators=(',',':')),
@@ -47,6 +61,7 @@ JS_DATA = "const AW=%s;\nconst MU=%s;\nconst SMILEY=%s;\nconst ARROWS=%s;\nconst
     json.dumps(SPARK, separators=(',',':')),
     json.dumps(UNICORN_SPRITE, separators=(',',':')),
     json.dumps(PAL_N, separators=(',',':')),
+    json.dumps(CRITTERS, separators=(',',':')),
 )
 
 JS_ENGINE = r"""
@@ -68,6 +83,21 @@ function bitmap(b,x,y,bytes,w,h,color){
   // Adafruit GFX drawBitmap semantics: one byte per row, MSB = leftmost pixel.
   for(let r=0;r<h;r++)for(let c=0;c<w;c++){
     if((bytes[r]>>(7-c))&1)px(b,x+c,y+r,color);}}
+function drawIndexedSprite(b,x,y,sprite,w,h,palette){
+  for(let r=0;r<h;r++)for(let c=0;c<w;c++){
+    const idx=sprite[r*w+c];if(idx>0)px(b,x+c,y+r,palette[idx]);}}
+function critterPalette(name,level,old){
+  const c=CRITTERS[name];let body=c.body,accent=c.accent;
+  if(old){body=S.stale;accent=S.stale;}
+  else if(level==='WL'||level==='UL')body=C.RED;
+  else if(level==='WH'||level==='UH')body=C.YELLOW;
+  return[0,body,accent,c.eye];}
+function critterFace(b,name){
+  const last=READINGS[READINGS.length-1],old=isOld(),c=CRITTERS[name];
+  if(!last){drawIndexedSprite(b,0,0,c.sprite,12,8,critterPalette(name,null,true));drawText(b,AW,noDataText(),33,6,1,S.stale);return;}
+  drawIndexedSprite(b,0,0,c.sprite,12,8,critterPalette(name,level(last.sgv),old));
+  drawText(b,AW,printable(last.sgv),32,6,1,old?S.stale:levelColor(last.sgv));
+  timerBlocks(b,last,16,16,7);}
 // ---- text: Adafruit GFX custom-font semantics, pixel exact ----
 function charW(F,ch){const w=F.charMap[ch.charCodeAt(0)];return w===undefined?4:w;}
 function textW(F,s){let w=0;for(const ch of s)w+=charW(F,ch);return w;}
@@ -281,6 +311,17 @@ const FACES=[
   const n=txt.length,h0=((t/20)|0)&255;let x=((32-textW(AW,txt))|0)/2;
   for(let i=0;i<n;i++){const hue=(((i*255)/Math.max(n,1))|0)+h0;drawText(b,AW,txt[i],x,6,0,hsv(hue));x+=textW(AW,txt[i]);}
 }},
+{name:"Poop",draw(b,t){critterFace(b,"Poop");}},
+{name:"Cat",draw(b,t){critterFace(b,"Cat");}},
+{name:"Dog",draw(b,t){critterFace(b,"Dog");}},
+{name:"Frog",draw(b,t){critterFace(b,"Frog");}},
+{name:"Panda",draw(b,t){critterFace(b,"Panda");}},
+{name:"Penguin",draw(b,t){critterFace(b,"Penguin");}},
+{name:"Owl",draw(b,t){critterFace(b,"Owl");}},
+{name:"Fox",draw(b,t){critterFace(b,"Fox");}},
+{name:"Bear",draw(b,t){critterFace(b,"Bear");}},
+{name:"Bunny",draw(b,t){critterFace(b,"Bunny");}},
+{name:"Pig",draw(b,t){critterFace(b,"Pig");}},
 {name:"Nyan unicorn",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();
   st.n=st.n||{x:-12,last:0,ps:0,paused:false};
@@ -319,7 +360,7 @@ const FACES=[
   const titleW=textW(AW,title),bgW=textW(AW,bgS),dW=dS?textW(AW,dS):0;
   const statsW=bgW+2+5+(dW>0?(3+dW):0),centerTarget=Math.max(0,Math.trunc((32-statsW)/2));
   if(q.paused){if(t-q.ps>3500)q.paused=false;}
-  else{let s=Math.floor((t-q.last)/35);if(s>0){q.last+=s*35;for(let i=0;i<s;i++){q.x--;
+  else{let s=Math.floor((t-q.last)/20);if(s>0){q.last+=s*20;for(let i=0;i<s;i++){q.x--;
     if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;break;}
     if(q.x<-(titleW+10+statsW))q.x=32;}}}
   const curStats=q.x+titleW+10,curBg=curStats,curArr=curBg+bgW+2,curDelta=curArr+5+3;

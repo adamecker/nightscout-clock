@@ -60,14 +60,36 @@ void BGDisplayManager_::setup() {
     facesNames[10] = "Rainbow sparkle";
     faces.push_back(new BGDisplayFaceRainbowClock());
     facesNames[11] = "Rainbow clock";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::POOP));
+    facesNames[12] = "Poop";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::CAT));
+    facesNames[13] = "Cat";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::DOG));
+    facesNames[14] = "Dog";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::FROG));
+    facesNames[15] = "Frog";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::PANDA));
+    facesNames[16] = "Panda";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::PENGUIN));
+    facesNames[17] = "Penguin";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::OWL));
+    facesNames[18] = "Owl";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::FOX));
+    facesNames[19] = "Fox";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::BEAR));
+    facesNames[20] = "Bear";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::BUNNY));
+    facesNames[21] = "Bunny";
+    faces.push_back(new BGDisplayFaceCritter(CritterId::PIG));
+    facesNames[22] = "Pig";
     faces.push_back(new BGDisplayFaceNyanUnicorn());
-    facesNames[12] = "Nyan unicorn";
+    facesNames[23] = "Nyan unicorn";
     faces.push_back(new BGDisplayFaceTitleScroll());
-    facesNames[13] = "Custom title scroll";
+    facesNames[24] = "Custom title scroll";
     faces.push_back(new BGDisplayFaceUnicorn());
-    facesNames[14] = "Unicorn";
+    facesNames[25] = "Unicorn";
     faces.push_back(new BGDisplayFaceTimeOnly());
-    facesNames[15] = "Time only";
+    facesNames[26] = "Time only";
 
     if (faces.size() != CLOCK_FACE_COUNT) {
         DEBUG_PRINTF(

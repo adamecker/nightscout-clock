@@ -68,7 +68,7 @@ void BGDisplayFaceTitleScroll::onActivate() const {
     }
 }
 bool BGDisplayFaceTitleScroll::needsFrequentRefresh() const { return true; }
-unsigned long BGDisplayFaceTitleScroll::getFrequentRefreshIntervalMs() const { return 35; }
+unsigned long BGDisplayFaceTitleScroll::getFrequentRefreshIntervalMs() const { return 20; }
 
 void BGDisplayFaceTitleScroll::showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld) const { showTitleTrain(readings, dataIsOld); }
 void BGDisplayFaceTitleScroll::showNoData() const { std::list<GlucoseReading> empty; showTitleTrain(empty, true); }
@@ -101,7 +101,7 @@ void BGDisplayFaceTitleScroll::showTitleTrain(const std::list<GlucoseReading>& r
 
     if (tIsPaused) {
         if (now - tPauseStart > 3500) tIsPaused = false;
-    } else if (now - tLastStep > 35) {
+    } else if (now - tLastStep > 20) {
         tScrollX--;
         if (tScrollX + titleW + 10 <= centerTarget) {
             tIsPaused = true;

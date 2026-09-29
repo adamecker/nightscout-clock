@@ -1,0 +1,36 @@
+#ifndef BGDISPLAYFACECRITTER_H
+#define BGDISPLAYFACECRITTER_H
+
+#include "BGDisplayFace.h"
+
+// Cute character faces. Each critter is a 12x8 sprite; the body color
+// follows the glucose level (natural/yellow/red) or goes gray when stale.
+enum class CritterId : uint8_t {
+    POOP = 0,
+    CAT,
+    DOG,
+    FROG,
+    PANDA,
+    PENGUIN,
+    OWL,
+    FOX,
+    BEAR,
+    BUNNY,
+    PIG,
+    COUNT
+};
+
+class BGDisplayFaceCritter : public BGDisplayFace {
+public:
+    explicit BGDisplayFaceCritter(CritterId id);
+    void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
+    void showNoData() const override;
+
+private:
+    CritterId critterId;
+    const uint8_t* getSprite() const;
+    const uint16_t* getPalette(BG_LEVEL level, bool dataIsOld) const;
+    void drawSprite(const uint8_t* sprite, const uint16_t* palette) const;
+};
+
+#endif  // BGDISPLAYFACECRITTER_H
