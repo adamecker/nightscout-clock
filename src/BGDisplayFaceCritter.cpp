@@ -154,14 +154,14 @@ const uint8_t spriteLuigi[12 * 8] PROGMEM = {
     0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
 };
 const uint8_t spritePeach[12 * 8] PROGMEM = {
-    0, 0, 0, 2, 0, 2, 0, 2, 0, 0, 0, 0,
+    0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0, 0,
     0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
-    0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0,
-    0, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2, 0,
-    0, 2, 1, 1, 3, 1, 1, 3, 1, 1, 2, 0,
-    0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0,
-    0, 0, 2, 1, 1, 3, 3, 1, 1, 2, 0, 0,
-    0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0,
+    0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
+    0, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3, 0,
+    0, 3, 1, 1, 0, 1, 1, 0, 1, 1, 3, 0,
+    0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0,
+    0, 2, 2, 1, 1, 0, 0, 1, 1, 2, 2, 0,
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
 };
 const uint8_t spriteToad[12 * 8] PROGMEM = {
     0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
@@ -306,7 +306,7 @@ const uint16_t bodyNatural[] = {
     0x8A22,  // MONKEY brown
     0xF800,  // MARIO red
     0x07E0,  // LUIGI green
-    0xFD20,  // PEACH skin (face-only)
+    0xFD20,  // PEACH skin
     0xF800,  // TOAD red
     0x07E0,  // YOSHI green
     0xFFFF,  // OLAF white
@@ -337,7 +337,7 @@ const uint16_t accentColor[] = {
     0xFD20,  // MONKEY tan muzzle
     0xFD20,  // MARIO skin
     0xFD20,  // LUIGI skin
-    0xFFE0,  // PEACH blonde hair
+    0xFCF4,  // PEACH pink crown/dress
     0xFFFF,  // TOAD cream spots/face
     0xFFFF,  // YOSHI white belly
     0xFC00,  // OLAF orange nose/buttons
@@ -368,7 +368,7 @@ const uint16_t eyeColor[] = {
     0x0000,  // MONKEY
     0x0000,  // MARIO
     0x0000,  // LUIGI
-    0x0000,  // PEACH
+    0xFFE0,  // PEACH blonde hair
     0x0000,  // TOAD
     0x0000,  // YOSHI
     0x0000,  // OLAF
