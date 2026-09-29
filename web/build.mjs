@@ -7,7 +7,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { stripCss, stripJs } from "./strip.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
@@ -39,12 +41,31 @@ function gzip(buf) {
  */
 const read = file => fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 
-const css = read(path.join(SRC, "app.css"));
-const js = JS.map(f => `// ---- ${f} ----\n` + read(path.join(SRC, "js", f))).join("\n;\n");
+const css = stripCss(read(path.join(SRC, "app.css")));
+const jsFiles = JS.map(f => ({ name: f, src: stripJs(read(path.join(SRC, "js", f))) }));
+// Fail the build if comment stripping ever breaks the syntax of a source file.
+for (const { name, src } of jsFiles) {
+    const tmp = path.join(SRC, "js", `.check-${name}`);
+    fs.writeFileSync(tmp, src);
+    try {
+        execFileSync(process.execPath, ["--check", tmp], { stdio: "pipe" });
+    } finally {
+        fs.unlinkSync(tmp);
+    }
+}
+const js = jsFiles.map(({ src }) => src).join("\n;\n");
+const bundle = `(function () {\n"use strict";\n${js}\n})();\n`;
+const tmpBundle = path.join(SRC, "js", ".check-bundle.js");
+fs.writeFileSync(tmpBundle, bundle);
+try {
+    execFileSync(process.execPath, ["--check", tmpBundle], { stdio: "pipe" });
+} finally {
+    fs.unlinkSync(tmpBundle);
+}
 let html = read(path.join(SRC, "index.html"));
 html = html
     .replace("/*__CSS__*/", () => css)
-    .replace("/*__JS__*/", () => `(function () {\n"use strict";\n${js}\n})();\n`.replace(/<\/script/gi, "<\\/script"));
+    .replace("/*__JS__*/", () => bundle.replace(/<\/script/gi, "<\\/script"));
 
 const page = gzip(Buffer.from(html));
 if (page.length > BUDGET_BYTES) {
