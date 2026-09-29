@@ -59,7 +59,9 @@ export function stripJs(src) {
             const q = state === "sq" ? "'" : state === "dq" ? '"' : "`";
             out += c;
             if (c === "\\") { out += d; i += 2; continue; }
-            if (c === q) { state = "code"; prevSig = q; prevWord = ""; i++; continue; }
+            // A closed string/template is an operand, so a following "/" is
+            // division, never a regex: report it like a closing paren.
+            if (c === q) { state = "code"; prevSig = ")"; prevWord = ""; i++; continue; }
             if (state === "tpl" && c === "$" && d === "{") {
                 out += d;
                 tplStack.push(0);
@@ -76,7 +78,8 @@ export function stripJs(src) {
             out += c;
             if (c === "\\") { out += d; i += 2; continue; }
             if (c === "[") { state = "rclass"; i++; continue; }
-            if (c === "/") { state = "code"; prevSig = "/"; prevWord = ""; i++; continue; }
+            // A closed regex is an operand too: a following "/" divides.
+            if (c === "/") { state = "code"; prevSig = ")"; prevWord = ""; i++; continue; }
             i++;
             continue;
         }
