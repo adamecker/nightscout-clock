@@ -10,13 +10,36 @@ enum class CritterId : uint8_t {
     CAT,
     DOG,
     FROG,
-    PANDA,
-    PENGUIN,
     OWL,
     FOX,
-    BEAR,
     BUNNY,
-    PIG,
+    // Animals
+    NARWHAL,
+    WHALE,
+    OCTOPUS,
+    TURTLE,
+    MONKEY,
+    // Mario
+    MARIO,
+    LUIGI,
+    PEACH,
+    TOAD,
+    YOSHI,
+    // Frozen
+    ELSA,
+    ANNA,
+    OLAF,
+    // Halloween / Fall
+    PUMPKIN,
+    GHOST,
+    BAT,
+    WITCH,
+    TURKEY,
+    // Other cute
+    MERMAID,
+    DINOSAUR,
+    BUTTERFLY,
+    BEE,
     COUNT
 };
 
