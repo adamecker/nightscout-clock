@@ -14,7 +14,7 @@
 >
 > You can reach me at **artiom@gmail.com**.
 
-### Current version: 1.1337.1
+### Current version: 1.1.0
 
 ![Build and Release](https://github.com/ktomy/nightscout-clock/actions/workflows/build_release.yml/badge.svg)
 
@@ -233,12 +233,15 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
 
 ## Changes
 
-### Unreleased
+### 1.2.0
 
 - Added 27 critter/character clock faces (Poop, Cat, Dog, Frog, Owl, Fox, Bunny, Narwhal, Whale, Octopus, Turtle, Monkey, Mario, Luigi, Peach, Toad, Yoshi, Olaf, Pumpkin, Ghost, Bat, Witch, Turkey, Mermaid, Dinosaur, Butterfly, Bee), listed after the standard faces. Each shows a 12×8 sprite beside the glucose value with a white 5×5 trend arrow; the sprite's body color follows the glucose state (natural/yellow/red, gray when stale).
+- Redrew Peach with a pink crown and pink dress (blonde hair moved to the detail palette slot; eyes/smile are bare pixels).
+- Fixed the display staying dark after double-clicking the middle button to turn it back on: the remembered brightness was overwritten with 0 while off, so power-on restored 0 in manual mode. The brightness overlay also no longer flashes while the display is off.
 - Sped up Custom title scrolling from 35 ms to 20 ms per pixel, matching the other scrolling faces.
 - Fixed the face simulator rendering 5×5 trend arrows and the 7×7 mini smiley as garbage: the JS `bitmap()` helper read one-byte-per-row data as a packed bitstream, and now uses per-row Adafruit semantics like the firmware.
 - Regenerated the simulator's Mu font data from `lib/Fonts/MuFont.h` — the old JSON had malformed glyph records from mis-split hex offsets.
+- Version numbering restarts at 1.2.0 (the 1.1337.x numbers were a joke). Going forward: bump the minor version for big changes, patch for small fixes, via `python scripts/release.py [major|minor|patch]`.
 
 ### 0.31
 
