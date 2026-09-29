@@ -82,14 +82,14 @@ const uint8_t spriteBunny[12 * 8] PROGMEM = {
 
 // --- New animals ---
 const uint8_t spriteNarwhal[12 * 8] PROGMEM = {
-    0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 1, 1, 2, 1, 1, 0, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 3, 1, 1, 1, 3, 1, 1, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0,
+    0, 0, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 3, 3, 0, 0, 0,
+    0, 1, 1, 3, 1, 1, 1, 1, 1, 1, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+    0, 0, 0, 1, 1, 2, 1, 1, 1, 1, 0, 0,
+    0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
 };
 const uint8_t spriteWhale[12 * 8] PROGMEM = {
     0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
@@ -112,14 +112,14 @@ const uint8_t spriteOctopus[12 * 8] PROGMEM = {
     0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0,
 };
 const uint8_t spriteTurtle[12 * 8] PROGMEM = {
-    0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0,
     0, 0, 1, 1, 2, 2, 2, 1, 1, 0, 0, 0,
     0, 1, 1, 1, 2, 2, 2, 1, 1, 1, 0, 0,
     0, 1, 1, 3, 1, 1, 1, 3, 1, 1, 0, 0,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
+    0, 2, 2, 0, 0, 2, 2, 0, 0, 2, 2, 0,
 };
 const uint8_t spriteMonkey[12 * 8] PROGMEM = {
     0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0,
@@ -134,34 +134,34 @@ const uint8_t spriteMonkey[12 * 8] PROGMEM = {
 
 // --- Mario characters ---
 const uint8_t spriteMario[12 * 8] PROGMEM = {
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 1, 3, 3, 1, 1, 1, 1, 0, 0,
-    0, 1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0,
-    0, 1, 2, 3, 2, 2, 2, 3, 2, 1, 0, 0,
-    0, 1, 2, 2, 3, 3, 3, 2, 2, 1, 0, 0,
-    0, 0, 1, 2, 2, 2, 2, 2, 1, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 3, 1, 1, 3, 1, 1, 0, 0,
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
+    0, 0, 2, 3, 2, 2, 2, 2, 3, 2, 0, 0,
+    0, 0, 2, 2, 3, 3, 3, 3, 2, 2, 0, 0,
+    0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0,
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
 };
 const uint8_t spriteLuigi[12 * 8] PROGMEM = {
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 1, 3, 3, 1, 1, 1, 1, 0, 0,
-    0, 1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0,
-    0, 1, 2, 3, 2, 2, 2, 3, 2, 1, 0, 0,
-    0, 1, 2, 2, 3, 3, 3, 2, 2, 1, 0, 0,
-    0, 0, 1, 2, 2, 2, 2, 2, 1, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 3, 1, 1, 3, 1, 1, 0, 0,
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
+    0, 0, 2, 3, 2, 2, 2, 2, 3, 2, 0, 0,
+    0, 0, 2, 2, 3, 3, 3, 3, 2, 2, 0, 0,
+    0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0,
+    0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
 };
 const uint8_t spritePeach[12 * 8] PROGMEM = {
-    0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0,
-    0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
-    0, 0, 2, 3, 2, 2, 3, 2, 0, 0, 0, 0,
-    0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 2, 0, 2, 0, 2, 0, 0, 0, 0,
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0,
+    0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0,
+    0, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2, 0,
+    0, 2, 1, 1, 3, 1, 1, 3, 1, 1, 2, 0,
+    0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0,
+    0, 0, 2, 1, 1, 3, 3, 1, 1, 2, 0, 0,
+    0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0,
 };
 const uint8_t spriteToad[12 * 8] PROGMEM = {
     0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
@@ -185,26 +185,6 @@ const uint8_t spriteYoshi[12 * 8] PROGMEM = {
 };
 
 // --- Frozen ---
-const uint8_t spriteElsa[12 * 8] PROGMEM = {
-    0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0,
-    0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
-    0, 0, 2, 3, 3, 3, 3, 2, 0, 0, 0, 0,
-    0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-};
-const uint8_t spriteAnna[12 * 8] PROGMEM = {
-    0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0,
-    0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0,
-    0, 0, 2, 3, 3, 3, 3, 2, 0, 0, 0, 0,
-    0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0,
-    0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-};
 const uint8_t spriteOlaf[12 * 8] PROGMEM = {
     0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0,
     0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
@@ -326,11 +306,9 @@ const uint16_t bodyNatural[] = {
     0x8A22,  // MONKEY brown
     0xF800,  // MARIO red
     0x07E0,  // LUIGI green
-    0xFC9F,  // PEACH pink
+    0xFD20,  // PEACH skin (face-only)
     0xF800,  // TOAD red
     0x07E0,  // YOSHI green
-    0x001F,  // ELSA blue
-    0x07E0,  // ANNA green
     0xFFFF,  // OLAF white
     0xFC00,  // PUMPKIN orange
     0xFFFF,  // GHOST white
@@ -362,8 +340,6 @@ const uint16_t accentColor[] = {
     0xFFE0,  // PEACH blonde hair
     0xFFFF,  // TOAD cream spots/face
     0xFFFF,  // YOSHI white belly
-    0xFFE0,  // ELSA blonde hair
-    0x8A22,  // ANNA auburn hair
     0xFC00,  // OLAF orange nose/buttons
     0x07E0,  // PUMPKIN green stem
     0xFFFF,  // GHOST white
@@ -395,8 +371,6 @@ const uint16_t eyeColor[] = {
     0x0000,  // PEACH
     0x0000,  // TOAD
     0x0000,  // YOSHI
-    0x0000,  // ELSA
-    0x0000,  // ANNA
     0x0000,  // OLAF
     0x0000,  // PUMPKIN
     0x0000,  // GHOST
@@ -432,8 +406,6 @@ const uint8_t* BGDisplayFaceCritter::getSprite() const {
         case CritterId::PEACH: return spritePeach;
         case CritterId::TOAD: return spriteToad;
         case CritterId::YOSHI: return spriteYoshi;
-        case CritterId::ELSA: return spriteElsa;
-        case CritterId::ANNA: return spriteAnna;
         case CritterId::OLAF: return spriteOlaf;
         case CritterId::PUMPKIN: return spritePumpkin;
         case CritterId::GHOST: return spriteGhost;
@@ -504,8 +476,8 @@ void BGDisplayFaceCritter::showReadings(
     auto bgLevel = bgDisplayManager.getGlucoseIntervals().getBGLevel(lastReading.sgv);
 
     drawSprite(getSprite(), getPalette(bgLevel, dataIsOld));
-    // Trend arrow in the gap between the sprite and the reading.
-    showTrendArrow(lastReading, 14, 2, dataIsOld, true);
+    // Trend arrow in the gap between the sprite and the reading (white, like standard faces).
+    showTrendArrow(lastReading, 14, 2, dataIsOld, false);
     showReading(lastReading, MATRIX_WIDTH - 1, 6, TEXT_ALIGNMENT::RIGHT, FONT_TYPE::MEDIUM, dataIsOld);
     drawTimerBlocks(lastReading, 16, 16, 7);
 }

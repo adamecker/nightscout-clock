@@ -27,8 +27,6 @@ enum class CritterId : uint8_t {
     TOAD,
     YOSHI,
     // Frozen
-    ELSA,
-    ANNA,
     OLAF,
     // Halloween / Fall
     PUMPKIN,

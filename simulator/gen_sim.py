@@ -47,18 +47,16 @@ CRITTERS = {
  'Owl':{'sprite':[0,0,1,1,0,0,0,0,1,1,0,0,0,1,1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,3,3,1,1,1,1,3,3,1,0,0,1,3,3,1,1,1,1,3,3,1,0,0,1,1,1,1,1,2,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0],'body':0x8A22,'accent':0xFD20,'eye':0x0000},
  'Fox':{'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,2,1,1,1,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0xFC00,'accent':0xFFFF,'eye':0x0000},
  'Bunny':{'sprite':[0,0,0,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,3,1,1,1,1,3,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,2,2,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0xFFFF,'accent':0xF81F,'eye':0x0000},
- 'Narwhal':{'sprite':[0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,1,1,2,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,3,1,1,1,3,1,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,2,2,2,1,1,0,0,0],'body':0x5AEB,'accent':0xFFFF,'eye':0x0000},
+ 'Narwhal':{'sprite':[0,0,0,0,0,0,0,3,0,0,0,0,0,0,1,1,1,1,1,3,0,0,0,0,0,1,1,1,1,1,1,3,3,0,0,0,0,1,1,3,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,2,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0x5AEB,'accent':0xFFFF,'eye':0x0000},
  'Whale':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,3,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,2,2,2,2,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0x001F,'accent':0xFFFF,'eye':0x0000},
  'Octopus':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,3,1,1,3,3,1,1,0,0,1,1,3,3,1,1,3,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,0,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,1,0,0],'body':0x801F,'accent':0xF81F,'eye':0x0000},
- 'Turtle':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,2,2,2,1,1,0,0,0,0,1,1,1,2,2,2,1,1,1,0,0,0,1,1,3,1,1,1,3,1,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'body':0x07E0,'accent':0x8A22,'eye':0x0000},
+ 'Turtle':{'sprite':[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,2,2,2,1,1,0,0,0,0,1,1,1,2,2,2,1,1,1,0,0,0,1,1,3,1,1,1,3,1,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,2,2,2,2,2,2,2,2,0,0,0,2,2,0,0,2,2,0,0,2,2,0],'body':0x07E0,'accent':0x8A22,'eye':0x0000},
  'Monkey':{'sprite':[0,1,1,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,1,1,1,1,3,1,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,2,2,2,2,1,1,0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],'body':0x8A22,'accent':0xFD20,'eye':0x0000},
- 'Mario':{'sprite':[0,0,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,3,3,1,1,1,1,0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,1,2,3,2,2,2,3,2,1,0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0],'body':0xF800,'accent':0xFD20,'eye':0x0000},
- 'Luigi':{'sprite':[0,0,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,3,3,1,1,1,1,0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,1,2,3,2,2,2,3,2,1,0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0],'body':0x07E0,'accent':0xFD20,'eye':0x0000},
- 'Peach':{'sprite':[0,0,0,3,3,3,3,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,2,3,2,2,3,2,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],'body':0xFC9F,'accent':0xFFE0,'eye':0x0000},
+ 'Mario':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,3,1,1,3,1,1,0,0,0,0,2,2,2,2,2,2,2,2,0,0,0,0,2,3,2,2,2,2,3,2,0,0,0,0,2,2,3,3,3,3,2,2,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0],'body':0xF800,'accent':0xFD20,'eye':0x0000},
+ 'Luigi':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,3,1,1,3,1,1,0,0,0,0,2,2,2,2,2,2,2,2,0,0,0,0,2,3,2,2,2,2,3,2,0,0,0,0,2,2,3,3,3,3,2,2,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0],'body':0x07E0,'accent':0xFD20,'eye':0x0000},
+ 'Peach':{'sprite':[0,0,0,2,0,2,0,2,0,0,0,0,0,0,2,2,2,2,2,2,2,2,0,0,0,2,2,2,2,2,2,2,2,2,2,0,0,2,2,1,1,1,1,1,1,2,2,0,0,2,1,1,3,1,1,3,1,1,2,0,0,2,1,1,1,1,1,1,1,1,2,0,0,0,2,1,1,3,3,1,1,2,0,0,0,0,0,2,2,2,2,2,2,0,0,0],'body':0xFD20,'accent':0xFFE0,'eye':0x0000},
  'Toad':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,2,1,1,1,2,1,1,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,2,2,2,2,2,2,2,0,0,0,0,0,2,3,2,2,2,3,2,0,0,0,0,0,2,2,2,2,2,2,2,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0],'body':0xF800,'accent':0xFFFF,'eye':0x0000},
  'Yoshi':{'sprite':[0,0,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,1,1,3,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],'body':0x07E0,'accent':0xFFFF,'eye':0x0000},
- 'Elsa':{'sprite':[0,0,0,2,2,2,2,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,2,3,3,3,3,2,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],'body':0x001F,'accent':0xFFE0,'eye':0x0000},
- 'Anna':{'sprite':[0,0,0,2,2,2,2,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,2,3,3,3,3,2,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],'body':0x07E0,'accent':0x8A22,'eye':0x0000},
  'Olaf':{'sprite':[0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,1,3,1,1,3,1,0,0,0,0,0,0,1,1,1,2,1,1,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,2,1,1,1,2,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0,0],'body':0xFFFF,'accent':0xFC00,'eye':0x0000},
  'Pumpkin':{'sprite':[0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,3,1,1,3,3,1,1,3,1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,1,3,3,3,3,3,3,1,1,0,0,1,1,1,3,1,1,3,1,1,1,0,0,0,1,1,1,1,1,1,1,1,0,0],'body':0xFC00,'accent':0x07E0,'eye':0x0000},
  'Ghost':{'sprite':[0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,3,1,1,1,1,3,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,3,3,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,0,1,0,1,0,1,0,0,0],'body':0xFFFF,'accent':0xFFFF,'eye':0x0000},
@@ -115,7 +113,7 @@ function critterFace(b,name){
   const last=READINGS[READINGS.length-1],old=isOld(),c=CRITTERS[name];
   if(!last){drawIndexedSprite(b,0,0,c.sprite,12,8,critterPalette(name,null,true));drawText(b,AW,noDataText(),33,6,1,S.stale);return;}
   drawIndexedSprite(b,0,0,c.sprite,12,8,critterPalette(name,level(last.sgv),old));
-  trendArrow(b,last,14,2,old,true);
+  trendArrow(b,last,14,2,old,false);
   drawText(b,AW,printable(last.sgv),32,6,1,old?S.stale:levelColor(last.sgv));
   timerBlocks(b,last,16,16,7);}
 // ---- text: Adafruit GFX custom-font semantics, pixel exact ----
@@ -331,35 +329,6 @@ const FACES=[
   const n=txt.length,h0=((t/20)|0)&255;let x=((32-textW(AW,txt))|0)/2;
   for(let i=0;i<n;i++){const hue=(((i*255)/Math.max(n,1))|0)+h0;drawText(b,AW,txt[i],x,6,0,hsv(hue));x+=textW(AW,txt[i]);}
 }},
-{name:"Poop",draw(b,t){critterFace(b,"Poop");}},
-{name:"Cat",draw(b,t){critterFace(b,"Cat");}},
-{name:"Dog",draw(b,t){critterFace(b,"Dog");}},
-{name:"Frog",draw(b,t){critterFace(b,"Frog");}},
-{name:"Owl",draw(b,t){critterFace(b,"Owl");}},
-{name:"Fox",draw(b,t){critterFace(b,"Fox");}},
-{name:"Bunny",draw(b,t){critterFace(b,"Bunny");}},
-{name:"Narwhal",draw(b,t){critterFace(b,"Narwhal");}},
-{name:"Whale",draw(b,t){critterFace(b,"Whale");}},
-{name:"Octopus",draw(b,t){critterFace(b,"Octopus");}},
-{name:"Turtle",draw(b,t){critterFace(b,"Turtle");}},
-{name:"Monkey",draw(b,t){critterFace(b,"Monkey");}},
-{name:"Mario",draw(b,t){critterFace(b,"Mario");}},
-{name:"Luigi",draw(b,t){critterFace(b,"Luigi");}},
-{name:"Peach",draw(b,t){critterFace(b,"Peach");}},
-{name:"Toad",draw(b,t){critterFace(b,"Toad");}},
-{name:"Yoshi",draw(b,t){critterFace(b,"Yoshi");}},
-{name:"Elsa",draw(b,t){critterFace(b,"Elsa");}},
-{name:"Anna",draw(b,t){critterFace(b,"Anna");}},
-{name:"Olaf",draw(b,t){critterFace(b,"Olaf");}},
-{name:"Pumpkin",draw(b,t){critterFace(b,"Pumpkin");}},
-{name:"Ghost",draw(b,t){critterFace(b,"Ghost");}},
-{name:"Bat",draw(b,t){critterFace(b,"Bat");}},
-{name:"Witch",draw(b,t){critterFace(b,"Witch");}},
-{name:"Turkey",draw(b,t){critterFace(b,"Turkey");}},
-{name:"Mermaid",draw(b,t){critterFace(b,"Mermaid");}},
-{name:"Dinosaur",draw(b,t){critterFace(b,"Dinosaur");}},
-{name:"Butterfly",draw(b,t){critterFace(b,"Butterfly");}},
-{name:"Bee",draw(b,t){critterFace(b,"Bee");}},
 {name:"Nyan unicorn",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();
   st.n=st.n||{x:-12,last:0,ps:0,paused:false};
@@ -397,7 +366,7 @@ const FACES=[
       towards=(last.sgv>180&&d<0)||(last.sgv<70&&d>0)||(last.sgv>=70&&last.sgv<=180);}}
   const titleW=textW(AW,title),bgW=textW(AW,bgS),dW=dS?textW(AW,dS):0;
   const statsW=bgW+2+5+(dW>0?(3+dW):0),centerTarget=Math.max(0,Math.trunc((32-statsW)/2));
-  if(q.paused){if(t-q.ps>3500)q.paused=false;}
+  if(q.paused){if(t-q.ps>3500){q.paused=false;q.last=t;}}
   else{let s=Math.floor((t-q.last)/20);if(s>0){q.last+=s*20;for(let i=0;i<s;i++){q.x--;
     if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;break;}
     if(q.x<-(titleW+10+statsW))q.x=32;}}}
@@ -424,6 +393,33 @@ const FACES=[
   else txt=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   drawText(b,AW,txt,0,6,2,C.WHITE);
 }}
+{name:"Poop",draw(b,t){critterFace(b,"Poop");}},
+{name:"Cat",draw(b,t){critterFace(b,"Cat");}},
+{name:"Dog",draw(b,t){critterFace(b,"Dog");}},
+{name:"Frog",draw(b,t){critterFace(b,"Frog");}},
+{name:"Owl",draw(b,t){critterFace(b,"Owl");}},
+{name:"Fox",draw(b,t){critterFace(b,"Fox");}},
+{name:"Bunny",draw(b,t){critterFace(b,"Bunny");}},
+{name:"Narwhal",draw(b,t){critterFace(b,"Narwhal");}},
+{name:"Whale",draw(b,t){critterFace(b,"Whale");}},
+{name:"Octopus",draw(b,t){critterFace(b,"Octopus");}},
+{name:"Turtle",draw(b,t){critterFace(b,"Turtle");}},
+{name:"Monkey",draw(b,t){critterFace(b,"Monkey");}},
+{name:"Mario",draw(b,t){critterFace(b,"Mario");}},
+{name:"Luigi",draw(b,t){critterFace(b,"Luigi");}},
+{name:"Peach",draw(b,t){critterFace(b,"Peach");}},
+{name:"Toad",draw(b,t){critterFace(b,"Toad");}},
+{name:"Yoshi",draw(b,t){critterFace(b,"Yoshi");}},
+{name:"Olaf",draw(b,t){critterFace(b,"Olaf");}},
+{name:"Pumpkin",draw(b,t){critterFace(b,"Pumpkin");}},
+{name:"Ghost",draw(b,t){critterFace(b,"Ghost");}},
+{name:"Bat",draw(b,t){critterFace(b,"Bat");}},
+{name:"Witch",draw(b,t){critterFace(b,"Witch");}},
+{name:"Turkey",draw(b,t){critterFace(b,"Turkey");}},
+{name:"Mermaid",draw(b,t){critterFace(b,"Mermaid");}},
+{name:"Dinosaur",draw(b,t){critterFace(b,"Dinosaur");}},
+{name:"Butterfly",draw(b,t){critterFace(b,"Butterfly");}},
+{name:"Bee",draw(b,t){critterFace(b,"Bee");}},
 ];
 """
 
