@@ -1,7 +1,8 @@
 #ifndef BGDISPLAYFACECRITTER_H
 #define BGDISPLAYFACECRITTER_H
 
-#include "BGDisplayFace.h"
+#include "BGDisplayFaceTextBase.h"
+#include "BGDisplayFaceWithAge.h"
 
 // Cute character faces. Each critter is a 12x8 sprite; the body color
 // follows the glucose level (natural/yellow/red) or goes gray when stale.
@@ -43,7 +44,7 @@ enum class CritterId : uint8_t {
     COUNT
 };
 
-class BGDisplayFaceCritter : public BGDisplayFace {
+class BGDisplayFaceCritter : public BGDisplayFaceTextBase, public BGDisplayFaceWithAge {
 public:
     explicit BGDisplayFaceCritter(CritterId id);
     void showReadings(const std::list<GlucoseReading>& readings, bool dataIsOld = false) const override;
