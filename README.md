@@ -189,8 +189,8 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - Brightness can be adjusted within the Web UI
   - Automatic brightness adjustment based on the ambient light
   - A single press of the middle button cycles manual brightness levels 1 through 10, then the two automatic modes, and wraps back to level 1
-  - The selected brightness mode and level are saved and remain active after a restart
-  - A long press restores the automatic brightness mode that was active before manual adjustment and shows the brightness icon with `AUTO`; if no previous mode is available after a restart, it restores the default balanced automatic mode
+  - Brightness changes made with the buttons are temporary; the brightness configured in the Web UI stays saved and is what the clock uses after a restart
+  - A long press on the middle button restores the brightness configured in the Web UI, from any mode, and shows the brightness icon (with `AUTO` for the automatic modes)
   - A compact brightness icon and the new brightness level are shown for 2 seconds, followed by a 0.5-second fade back to the selected clock face
   - While the brightness indicator is shown, automatic clock-face rotation and normal face redraws are paused; the rotation timer restarts when the indicator disappears
   - Double-click on the middle button on the clock turns the display on and off
@@ -232,6 +232,11 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - ...more... (if you are the author of a CGM data collecting app/service and you want your data to be displayed on the Nightscout Clock, please contact me)
 
 ## Changes
+
+### Unreleased
+
+- Fixed the brightness overlay flickering when adjusting brightness with the middle button: it redrew every tick with a blank frame in between, and the light-sensor loop kept repainting the face underneath it. The overlay now redraws at most every 50 ms with no intermediate blank frame, and the light-sensor loop pauses while it is shown.
+- Middle-button brightness tweaks are now temporary (in-memory only, like the face schedule) instead of overwriting the saved settings. A long press on the middle button restores the brightness configured in the web UI, from any mode.
 
 ### 1.2.0
 

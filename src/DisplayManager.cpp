@@ -124,6 +124,14 @@ void DisplayManager_::showBrightnessOverlay() {
         return;  // Display is off; don't flash the overlay.
     }
 
+    // The overlay only changes as it fades out; redrawing it every tick pushed
+    // a blank frame plus a fresh frame each time, which flickered. Throttle to
+    // one draw per 50 ms and skip the intermediate blank show().
+    if (millis() - brightnessOverlayLastDraw < 50) {
+        return;
+    }
+    brightnessOverlayLastDraw = millis();
+
     uint8_t intensity = 255;
     if (elapsed > 2000) {
         intensity = static_cast<uint8_t>(255 - ((elapsed - 2000) * 255 / 500));
@@ -135,7 +143,7 @@ void DisplayManager_::showBrightnessOverlay() {
         {0, 0, 1, 1, 1, 0, 0}, {0, 1, 0, 1, 0, 1, 0}, {0, 0, 0, 1, 0, 0, 0},
     };
 
-    clearMatrix();
+    clearMatrix(false);
     for (uint8_t row = 0; row < 7; row++) {
         for (uint8_t column = 0; column < 7; column++) {
             if (brightnessIcon[row][column] != 0) {
@@ -373,7 +381,8 @@ void DisplayManager_::leftButton() { bgDisplayManager.showPreviousFace(); }
 // cycle to next face
 void DisplayManager_::rightButton() { bgDisplayManager.showNextFace(); }
 
-// decrease brightness if not auto mode
+// decrease brightness if not auto mode (temporary; the web UI's configured
+// brightness is restored with a long press on the middle button)
 void DisplayManager_::leftButtonLong() {
     if (SettingsManager.settings.brightness_mode == BRIGHTNES_MODE::MANUAL) {
         int newBrightness = SettingsManager.settings.brightness_level - 1;
@@ -381,12 +390,12 @@ void DisplayManager_::leftButtonLong() {
             newBrightness = 1;
         }
         SettingsManager.settings.brightness_level = newBrightness;
-        SettingsManager.saveSettingsToFile();
         DisplayManager.applySettings();
     }
 }
 
-// increase brightness if not auto mode
+// increase brightness if not auto mode (temporary; the web UI's configured
+// brightness is restored with a long press on the middle button)
 void DisplayManager_::rightButtonLong() {
     if (SettingsManager.settings.brightness_mode == BRIGHTNES_MODE::MANUAL) {
         int newBrightness = SettingsManager.settings.brightness_level + 1;
@@ -394,7 +403,6 @@ void DisplayManager_::rightButtonLong() {
             newBrightness = 10;
         }
         SettingsManager.settings.brightness_level = newBrightness;
-        SettingsManager.saveSettingsToFile();
         DisplayManager.applySettings();
     }
 }
@@ -421,14 +429,10 @@ void DisplayManager_::selectButton() {
             break;
     }
 
-    if (currentMode != BRIGHTNES_MODE::MANUAL && nextMode == BRIGHTNES_MODE::MANUAL) {
-        previousAutomaticBrightnessMode = currentMode;
-        previousAutomaticBrightnessModeSaved = true;
-    }
-
+    // Button tweaks apply in memory only and never overwrite the brightness
+    // configured in the web UI; a long press restores the configured values.
     SettingsManager.settings.brightness_mode = nextMode;
     SettingsManager.settings.brightness_level = constrain(nextLevel, 1, 10);
-    SettingsManager.saveSettingsToFile();
     applySettings();
 
     brightnessOverlayShowsAuto = nextMode != BRIGHTNES_MODE::MANUAL;
@@ -439,18 +443,15 @@ void DisplayManager_::selectButton() {
 }
 
 void DisplayManager_::selectButtonLong() {
-    if (SettingsManager.settings.brightness_mode != BRIGHTNES_MODE::MANUAL) {
+    // Restore whatever brightness was configured in the web UI (the persisted
+    // settings file); button tweaks are temporary and never overwrite it.
+    if (!SettingsManager.loadBrightnessFromFile()) {
         return;
     }
-
-    SettingsManager.settings.brightness_mode = previousAutomaticBrightnessModeSaved
-                                                   ? previousAutomaticBrightnessMode
-                                                   : BRIGHTNES_MODE::AUTO_LINEAR;
-    SettingsManager.saveSettingsToFile();
     applySettings();
-    previousAutomaticBrightnessModeSaved = false;
 
-    brightnessOverlayShowsAuto = true;
+    brightnessOverlayShowsAuto = SettingsManager.settings.brightness_mode != BRIGHTNES_MODE::MANUAL;
+    brightnessOverlayPercent = SettingsManager.settings.brightness_level * 10;
     brightnessOverlayStarted = millis();
     brightnessOverlayActive = true;
     showBrightnessOverlay();
