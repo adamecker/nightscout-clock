@@ -68,7 +68,7 @@ function hsv(h){h&=255;const region=(h/43)|0,rem=(h-region*43)*6,q=255-rem,t=rem
   switch(region){case 0:return rgb565(255,t,0);case 1:return rgb565(q,255,0);case 2:return rgb565(0,255,t);
   case 3:return rgb565(0,q,255);case 4:return rgb565(t,0,255);default:return rgb565(255,0,q);}}
 function fade(c){let r=(c>>11)&31,g=(c>>5)&63,b=c&31;
-  r=(r*3/5)|0;g=(g*3/5)|0;b=(b*3/5)|0;return (r<<11)|(g<<5)|b;}
+  r=(r*4/5)|0;g=(g*4/5)|0;b=(b*4/5)|0;return (r<<11)|(g<<5)|b;}
 function px(b,x,y,c){if(x>=0&&x<32&&y>=0&&y<8)b[y*32+x]=c|0;}
 function bitmap(b,x,y,bytes,w,h,color){
   for(let r=0;r<h;r++)for(let c=0;c<w;c++){const i=r*w+c;
@@ -470,5 +470,5 @@ requestAnimationFrame(frame);
 """
 
 html = HTML_HEAD + JS_DATA + JS_ENGINE + JS_FACES + HTML_TAIL
-open('/home/hatch/workspace/your_files/nightscout-clock-simulator/index.html', 'w').write(html)
+open(os.path.join(HERE, 'index.html'), 'w').write(html)
 print("bytes:", len(html))
