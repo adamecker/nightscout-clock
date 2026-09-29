@@ -114,8 +114,14 @@ void DisplayManager_::showBrightnessOverlay() {
     const unsigned long elapsed = millis() - brightnessOverlayStarted;
     if (elapsed >= 2500) {
         brightnessOverlayActive = false;
-        clearMatrix();
+        if (!MATRIX_OFF) {
+            clearMatrix();
+        }
         return;
+    }
+
+    if (MATRIX_OFF) {
+        return;  // Display is off; don't flash the overlay.
     }
 
     uint8_t intensity = 255;
@@ -340,7 +346,8 @@ void DisplayManager_::drawPixel(uint8_t x, uint8_t y, uint16_t color, bool updat
 void DisplayManager_::setBrightness(int bri) {
     if (MATRIX_OFF) {
         matrix->setBrightness(0);
-        currentBrightness = 0;
+        // Keep currentBrightness untouched so setPower(true) can restore it;
+        // overwriting it here left the display dark after a power cycle.
     } else {
         matrix->setBrightness(bri);
         currentBrightness = bri;
