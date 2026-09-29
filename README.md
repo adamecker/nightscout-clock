@@ -68,7 +68,7 @@ Once the clock runs a firmware with OTA support (see below), it can update itsel
 
 Firmware and the settings-page filesystem are separate update types with separate endpoints, so update both when a release changes the web UI.
 
-**Automatic self-update.** In the System tab → **Automatic updates**, enable "Check for and install updates automatically". The clock then checks the release manifest once shortly after boot and once a day at the configured hour (its local time) and installs new images itself — firmware and filesystem as needed. Made for clocks you can't reach on their own network: it only needs outbound internet. Updates always keep your settings — network, selected face, school mode, and the custom MAC address all survive — and the clock reports what it installed in its status heartbeat (below).
+**Automatic self-update.** In the System tab → **Automatic updates**, enable "Check for and install updates automatically". The clock then checks the release manifest about 3 minutes after every boot and once a day at the configured hour (its local time), and installs new images itself — firmware and filesystem as needed. Note: the after-boot check runs on *every* restart while this is on, so pressing "Save and restart" in the web UI can itself install a pending update a few minutes later. Made for clocks you can't reach on their own network: it only needs outbound internet. Updates always keep your settings — network, selected face, school mode, and the custom MAC address all survive — and the clock reports what it installed in its status heartbeat (below).
 
 **Status heartbeat (remote monitoring).** In the same card, set a heartbeat URL and the clock will POST a small JSON status (firmware version, uptime, WiFi signal, IP address, school mode, selected face, display on/off, free heap, battery percent and raw ADC reading, BG source, BG source status, last glucose value, and seconds since the last reading — `-1` if no reading yet) on a schedule plus shortly after every boot. Point it at [healthchecks.io](https://healthchecks.io) (free) to get alerted if the clock ever goes quiet, or at [ntfy.sh](https://ntfy.sh) to receive the heartbeat as phone notifications — no server or inbound connection needed. After a remote update, the heartbeat's `version` field confirms what the clock is running without visiting it.
 
@@ -232,6 +232,10 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - ...more... (if you are the author of a CGM data collecting app/service and you want your data to be displayed on the Nightscout Clock, please contact me)
 
 ## Changes
+
+### Unreleased
+
+- Docs: clarified that with automatic updates on, the ~3-minute after-boot update check runs on every restart — so "Save and restart" in the web UI can itself install a pending update a few minutes later.
 
 ### 1.4.0
 
