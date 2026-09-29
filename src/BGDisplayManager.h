@@ -18,6 +18,7 @@
 #include "BGDisplayFaceSimple.h"
 #include "BGDisplayFaceSmiley.h"
 #include "BGDisplayFaceRainbowSparkle.h"
+#include "BGDisplayFaceRainbowClock.h"
 #include "BGDisplayFaceNyanUnicorn.h"
 #include "BGDisplayFaceTitleScroll.h"
 #include "BGDisplayFaceTimeOnly.h"

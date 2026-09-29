@@ -58,14 +58,16 @@ void BGDisplayManager_::setup() {
     facesNames[9] = "Smiley";
     faces.push_back(new BGDisplayFaceRainbowSparkle());
     facesNames[10] = "Rainbow sparkle";
+    faces.push_back(new BGDisplayFaceRainbowClock());
+    facesNames[11] = "Rainbow clock";
     faces.push_back(new BGDisplayFaceNyanUnicorn());
-    facesNames[11] = "Nyan unicorn";
+    facesNames[12] = "Nyan unicorn";
     faces.push_back(new BGDisplayFaceTitleScroll());
-    facesNames[12] = "Custom title scroll";
+    facesNames[13] = "Custom title scroll";
     faces.push_back(new BGDisplayFaceUnicorn());
-    facesNames[13] = "Unicorn";
+    facesNames[14] = "Unicorn";
     faces.push_back(new BGDisplayFaceTimeOnly());
-    facesNames[14] = "Time only";
+    facesNames[15] = "Time only";
 
     if (faces.size() != CLOCK_FACE_COUNT) {
         DEBUG_PRINTF(
