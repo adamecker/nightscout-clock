@@ -291,19 +291,22 @@ const uint8_t spriteBee[12 * 8] PROGMEM = {
 };
 
 // Natural body colors (RGB565). Index matches CritterId order.
+// The darkest entries are brightened ~1.5x: AUTO_DIMMED drops the matrix
+// to near-minimum brightness at night, which crushed the dark bodies
+// to near-black while bright faces stayed readable.
 const uint16_t bodyNatural[] = {
-    0x8A22,  // POOP brown
+    0xD343,  // POOP brown
     0xFC00,  // CAT orange
     0xFD20,  // DOG tan
     0x07E0,  // FROG green
-    0x8A22,  // OWL brown
+    0xD343,  // OWL brown
     0xFC00,  // FOX orange
     0xFFFF,  // BUNNY white
-    0x5AEB,  // NARWHAL blue-gray
-    0x001F,  // WHALE blue
-    0x801F,  // OCTOPUS purple
+    0x94B2,  // NARWHAL blue-gray
+    0x439F,  // WHALE blue
+    0xA81F,  // OCTOPUS purple
     0x07E0,  // TURTLE green
-    0x8A22,  // MONKEY brown
+    0xD343,  // MONKEY brown
     0xF800,  // MARIO red
     0x07E0,  // LUIGI green
     0xFD20,  // PEACH skin
@@ -312,9 +315,9 @@ const uint16_t bodyNatural[] = {
     0xFFFF,  // OLAF white
     0xFC00,  // PUMPKIN orange
     0xFFFF,  // GHOST white
-    0x801F,  // BAT purple
-    0x801F,  // WITCH purple
-    0x8A22,  // TURKEY brown
+    0xA81F,  // BAT purple
+    0xA81F,  // WITCH purple
+    0xD343,  // TURKEY brown
     0x07FF,  // MERMAID teal
     0x07E0,  // DINOSAUR green
     0xFC9F,  // BUTTERFLY pink
@@ -323,9 +326,9 @@ const uint16_t bodyNatural[] = {
 
 // Accent colors (constant across levels).
 const uint16_t accentColor[] = {
-    0x71A0,  // POOP dark brown
+    0xAA80,  // POOP dark brown
     0xF81F,  // CAT pink nose
-    0x8A22,  // DOG brown snout
+    0xD343,  // DOG brown snout
     0x87F0,  // FROG light green smile
     0xFD20,  // OWL tan beak
     0xFFFF,  // FOX white snout
@@ -333,7 +336,7 @@ const uint16_t accentColor[] = {
     0xFFFF,  // NARWHAL white tusk/belly
     0xFFFF,  // WHALE white belly
     0xF81F,  // OCTOPUS pink
-    0x8A22,  // TURTLE brown shell
+    0xD343,  // TURTLE brown shell
     0xFD20,  // MONKEY tan muzzle
     0xFD20,  // MARIO skin
     0xFD20,  // LUIGI skin
