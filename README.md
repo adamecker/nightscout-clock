@@ -14,7 +14,7 @@
 >
 > You can reach me at **artiom@gmail.com**.
 
-### Current version: 1.3.0
+### Current version: 1.4.0
 
 ![Build and Release](https://github.com/ktomy/nightscout-clock/actions/workflows/build_release.yml/badge.svg)
 
@@ -233,7 +233,7 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
 
 ## Changes
 
-### Unreleased
+### 1.4.0
 
 - Enriched the status heartbeat payload with battery percent and raw ADC reading, IP address, display on/off state, BG source and source status, last glucose value, and seconds since the last reading (`-1` when no reading yet) — so a remote heartbeat shows whether the clock is actually receiving fresh BG data.
 
