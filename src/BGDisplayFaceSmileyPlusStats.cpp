@@ -3,11 +3,11 @@
 #include "globals.h"
 
 namespace {
-// 7x7 outline faces: circle rows 0-1/5-6, eyes row 2, mouth rows 4-5.
-// Sad is happy with the mouth rows flipped vertically (corners pull down).
-const uint8_t PROGMEM MINI_HAPPY[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b10101010, 0b01000100, 0b00111000 };
-const uint8_t PROGMEM MINI_NEUTRAL[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b10000010, 0b01000100, 0b00111000 };
-const uint8_t PROGMEM MINI_SAD[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b01000100, 0b10101010, 0b00111000 };
+// 7x7 outline faces: circle rows 0-1/5-6, eyes row 2, mouth row 4 (happy/neutral)
+// or row 5 (sad, pulled down). Mouth: smile corners / straight bar / low corners.
+const uint8_t PROGMEM MINI_HAPPY[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b11000110, 0b01000100, 0b00111000 };
+const uint8_t PROGMEM MINI_NEUTRAL[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b10111010, 0b01000100, 0b00111000 };
+const uint8_t PROGMEM MINI_SAD[] = { 0b00111000, 0b01000100, 0b10101010, 0b10000010, 0b10000010, 0b11000110, 0b00111000 };
 }
 
 bool BGDisplayFaceSmileyPlusStats::needsFrequentRefresh() const { return true; }

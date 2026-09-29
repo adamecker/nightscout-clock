@@ -52,7 +52,7 @@ const MU={"bitmaps":[255,236,48,222,246,109,253,179,102,223,219,0,16,251,67,225,
 const SMILEY={"face_disc":[60,126,255,255,255,255,126,60],"features_happy":[0,0,36,0,66,60,0,0],"features_sad":[0,0,36,0,60,66,0,0],"features_angry":[0,0,66,36,0,60,66,0],"features_neutral":[0,0,36,0,0,60,0,0],"features_concerned":[0,0,24,36,0,60,66,0]};
 const ARROWS={"DOUBLE_UP":[80,248,80,80,80],"SINGLE_UP":[32,112,168,32,32],"FORTYFIVE_UP":[56,24,40,64,128],"FLAT":[32,16,248,16,32],"FORTYFIVE_DOWN":[128,64,40,24,56],"SINGLE_DOWN":[32,32,168,112,32],"DOUBLE_DOWN":[80,80,80,248,80],"NONE":[0,0,0,0,0],"OLD":[136,80,32,80,136]};
 const SPARK={"A":[60,66,165,129,165,153,66,60],"B":[60,66,165,129,129,189,66,60],"S":[60,66,165,165,129,153,153,60],"D":[60,66,153,36,129,90,66,60]};
-const MINI={"happy":[56,68,170,130,170,68,56],"neutral":[56,68,170,130,130,68,56],"sad":[56,68,170,130,68,170,56]};
+const MINI={"happy":[56,68,170,130,198,68,56],"neutral":[56,68,170,130,186,68,56],"sad":[56,68,170,130,130,198,56]};
 const USPRITE=[1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,4,5,6,7,0,0,0,0,0,1,1,4,4,4,5,6,7,0,0,0,0,0,2,2,2,2,4,5,6,7,0,2,2,2,2,3,2,2,4,5,6,7,0,2,2,2,2,2,2,2,4,5,6,7,0,0,2,2,2,2,2,2,4,5,6,7,0,0,0,0,2,2,2,2,2,4,5,6,7];
 const UPALN=[65159,63389,6339,19807,24237,64711,64120,39678];
 
@@ -300,7 +300,7 @@ const FACES=[
   st.n=st.n||{x:-12,last:0,ps:0,paused:false};
   const n=st.n,s=last?printable(last.sgv):noDataText(),vw=textW(AW,s);
   if(n.paused){if(t-n.ps>3500)n.paused=false;}
-  else if(t-n.last>35){n.x++;if(n.x===24){n.paused=true;n.ps=t;}if(n.x>(32+vw+18))n.x=-12;n.last=t;}
+  else{let s=Math.floor((t-n.last)/35);if(s>0){n.last+=s*35;for(let i=0;i<s;i++){n.x++;if(n.x===24){n.paused=true;n.ps=t;break;}if(n.x>(32+vw+18))n.x=-12;}}}
   const leg=((t/110)|0)%2,wave=((t/110)|0)%4,ux=n.x,tEnd=ux+1,tStart=ux-10;
   const bgX=tStart-vw-2,arrX=bgX+vw+1;
   const NY=[rgb565(255,0,55),rgb565(255,140,0),rgb565(255,235,0),rgb565(0,255,60),rgb565(160,40,255)];
@@ -333,9 +333,9 @@ const FACES=[
   const titleW=textW(AW,title),bgW=textW(AW,bgS),dW=dS?textW(AW,dS):0;
   const statsW=bgW+2+5+(dW>0?(3+dW):0),centerTarget=Math.max(0,Math.trunc((32-statsW)/2));
   if(q.paused){if(t-q.ps>3500)q.paused=false;}
-  else if(t-q.last>35){q.x--;
-    if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;}
-    if(q.x<-(titleW+10+statsW))q.x=32;q.last=t;}
+  else{let s=Math.floor((t-q.last)/35);if(s>0){q.last+=s*35;for(let i=0;i<s;i++){q.x--;
+    if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;break;}
+    if(q.x<-(titleW+10+statsW))q.x=32;}}}
   const curStats=q.x+titleW+10,curBg=curStats,curArr=curBg+bgW+2,curDelta=curArr+5+3;
   drawText(b,AW,title,q.x,6,0,C.CYAN);
   drawText(b,AW,bgS,curBg,6,0,old?S.stale:(last?levelColor(last.sgv):S.stale));

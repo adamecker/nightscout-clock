@@ -27,9 +27,9 @@ SPARK = {
     'D': [0b00111100,0b01000010,0b10011001,0b00100100,0b10000001,0b01011010,0b01000010,0b00111100],
 }
 MINI = {
-    'happy':   [0b00111000,0b01000100,0b10101010,0b10000010,0b10101010,0b01000100,0b00111000],
-    'neutral': [0b00111000,0b01000100,0b10101010,0b10000010,0b10000010,0b01000100,0b00111000],
-    'sad':     [0b00111000,0b01000100,0b10101010,0b10000010,0b01000100,0b10101010,0b00111000],
+    'happy':   [0b00111000,0b01000100,0b10101010,0b10000010,0b11000110,0b01000100,0b00111000],
+    'neutral': [0b00111000,0b01000100,0b10101010,0b10000010,0b10111010,0b01000100,0b00111000],
+    'sad':     [0b00111000,0b01000100,0b10101010,0b10000010,0b10000010,0b11000110,0b00111000],
 }
 # Upstream unicorn sprite (12x8, palette indices), palettes in RGB565
 UNICORN_SPRITE = [
@@ -302,7 +302,7 @@ const FACES=[
   st.n=st.n||{x:-12,last:0,ps:0,paused:false};
   const n=st.n,s=last?printable(last.sgv):noDataText(),vw=textW(AW,s);
   if(n.paused){if(t-n.ps>3500)n.paused=false;}
-  else if(t-n.last>35){n.x++;if(n.x===24){n.paused=true;n.ps=t;}if(n.x>(32+vw+18))n.x=-12;n.last=t;}
+  else{let s=Math.floor((t-n.last)/35);if(s>0){n.last+=s*35;for(let i=0;i<s;i++){n.x++;if(n.x===24){n.paused=true;n.ps=t;break;}if(n.x>(32+vw+18))n.x=-12;}}}
   const leg=((t/110)|0)%2,wave=((t/110)|0)%4,ux=n.x,tEnd=ux+1,tStart=ux-10;
   const bgX=tStart-vw-2,arrX=bgX+vw+1;
   const NY=[rgb565(255,0,55),rgb565(255,140,0),rgb565(255,235,0),rgb565(0,255,60),rgb565(160,40,255)];
@@ -335,9 +335,9 @@ const FACES=[
   const titleW=textW(AW,title),bgW=textW(AW,bgS),dW=dS?textW(AW,dS):0;
   const statsW=bgW+2+5+(dW>0?(3+dW):0),centerTarget=Math.max(0,Math.trunc((32-statsW)/2));
   if(q.paused){if(t-q.ps>3500)q.paused=false;}
-  else if(t-q.last>35){q.x--;
-    if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;}
-    if(q.x<-(titleW+10+statsW))q.x=32;q.last=t;}
+  else{let s=Math.floor((t-q.last)/35);if(s>0){q.last+=s*35;for(let i=0;i<s;i++){q.x--;
+    if(q.x+titleW+10<=centerTarget){q.paused=true;q.ps=t;break;}
+    if(q.x<-(titleW+10+statsW))q.x=32;}}}
   const curStats=q.x+titleW+10,curBg=curStats,curArr=curBg+bgW+2,curDelta=curArr+5+3;
   drawText(b,AW,title,q.x,6,0,C.CYAN);
   drawText(b,AW,bgS,curBg,6,0,old?S.stale:(last?levelColor(last.sgv):S.stale));
