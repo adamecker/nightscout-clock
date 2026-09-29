@@ -64,6 +64,8 @@ private:
     // tick()-driven automation: daily self-update check and status heartbeat.
     void tickAutoUpdate();
     void tickHeartbeat();
+    // Fire off one heartbeat ping to the given URL (empty = no-op).
+    void sendHeartbeatNow(const String& url);
     static void heartbeatTask(void* param);
     unsigned long otaAutoBootMs = 0;
     bool otaAutoBootCheckDone = false;

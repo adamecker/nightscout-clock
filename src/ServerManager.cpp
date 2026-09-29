@@ -1070,9 +1070,68 @@ void ServerManager_::setupWebServer(IPAddress ip) {
         } else {
             jsonResponse += "0";
         }
+        jsonResponse += ", \"faceId\": ";
+        jsonResponse += String(bgDisplayManager.getCurrentFaceId());
         jsonResponse += "}";
         request->send(200, "application/json", jsonResponse);
     });
+
+    // Manual heartbeat test ping: POST an optional {"url"} to ping that URL
+    // (handy for testing the address typed in the web UI before saving it),
+    // otherwise the saved heartbeat URL. The ping runs in the background;
+    // "ok" means it was started, and delivery is confirmed at the receiver.
+    ws->addHandler(new AsyncCallbackJsonWebHandler(
+        "/api/heartbeat/test", [this](AsyncWebServerRequest* request, JsonVariant& json) {
+            if (!enforceAuthentication(request)) {
+                return;
+            }
+            String url;
+            if (json.is<JsonObject>()) {
+                url = json.as<JsonObject>()["url"].as<String>();
+            }
+            url.trim();
+            if (url.length() == 0) {
+                url = SettingsManager.settings.healthcheck_url;
+                url.trim();
+            }
+            if (url.length() == 0) {
+                request->send(400, "application/json",
+                              "{\"status\": \"error\", \"error\": \"no heartbeat URL configured\"}");
+                return;
+            }
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                request->send(400, "application/json",
+                              "{\"status\": \"error\", \"error\": \"URL must start with http:// or https://\"}");
+                return;
+            }
+            sendHeartbeatNow(url);
+            request->send(200, "application/json", "{\"status\": \"ok\"}");
+        }));
+
+    // Switch the currently displayed face immediately, like the side buttons.
+    // Temporary: it does not change the default face, schedule, or cycling.
+    ws->addHandler(new AsyncCallbackJsonWebHandler(
+        "/api/face", [this](AsyncWebServerRequest* request, JsonVariant& json) {
+            if (!enforceAuthentication(request)) {
+                return;
+            }
+            if (!json.is<JsonObject>() || !json.as<JsonObject>()["face"].is<int>()) {
+                request->send(400, "application/json",
+                              "{\"status\": \"error\", \"error\": \"face must be an integer face id\"}");
+                return;
+            }
+            int id = json.as<JsonObject>()["face"].as<int>();
+            if (bgDisplayManager.getFaces().count(id) == 0) {
+                request->send(400, "application/json",
+                              "{\"status\": \"error\", \"error\": \"unknown face id\"}");
+                return;
+            }
+            bgDisplayManager.setFace(id);
+            String body = "{\"status\": \"ok\", \"face\": ";
+            body += id;
+            body += "}";
+            request->send(200, "application/json", body);
+        }));
 
     ws->on("/config.json", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (!enforceAuthentication(request)) {
@@ -1355,14 +1414,23 @@ void ServerManager_::tickHeartbeat() {
         healthcheckBootSent = true;
     }
     healthcheckLastMs = now;
-    xTaskCreate(heartbeatTask, "heartbeat", 8192, this, 1, NULL);
+    sendHeartbeatNow(SettingsManager.settings.healthcheck_url);
+}
+
+void ServerManager_::sendHeartbeatNow(const String& url) {
+    // The task takes ownership of the heap-allocated URL and deletes it.
+    xTaskCreate(heartbeatTask, "heartbeat", 8192, new String(url), 1, NULL);
 }
 
 void ServerManager_::heartbeatTask(void* param) {
-    auto* self = static_cast<ServerManager_*>(param);
-    (void)self;
-    String url = SettingsManager.settings.healthcheck_url;
+    String* urlPtr = static_cast<String*>(param);
+    String url = urlPtr ? *urlPtr : String();
+    delete urlPtr;
     url.trim();
+    if (url.length() == 0) {
+        vTaskDelete(NULL);
+        return;
+    }
     JsonDocument doc;
     doc["version"] = VERSION;
     doc["uptime_s"] = (int)(millis() / 1000);

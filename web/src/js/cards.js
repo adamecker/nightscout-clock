@@ -246,7 +246,46 @@ function toast(message, kind = "ok", ms = 4500) {
  * @returns {HTMLElement}
  */
 function displayTab() {
-    return el("div.stack", facesCard(), schoolModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
+    return el("div.stack", facesCard(), faceSwitchCard(), schoolModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
+}
+
+/**
+ * Build the manual face-switch card: show any face immediately without
+ * touching the clock, for displays mounted out of reach. Temporary, like the
+ * side buttons: it does not change the default face, schedule, or cycling.
+ * @returns {HTMLElement}
+ */
+function faceSwitchCard() {
+    const select = el("select", { id: "face_switch_select", "aria-label": "Face to show" })
+    for (const f of FACES) select.add(new Option(f.name, f.id))
+    const nowShowing = el("p.help", { id: "face_switch_now" }, "Now showing: …")
+    const setNowShowing = id => {
+        const f = FACES.find(x => x.id === id)
+        nowShowing.textContent = f ? `Now showing: ${f.name}.` : "Now showing: …"
+        if (f) select.value = String(f.id)
+    }
+    // Show the face the clock is currently displaying, when the status loads.
+    api.get("/api/status").then(s => setNowShowing(s.faceId)).catch(() => {})
+    const status = el("p.help", { id: "face_switch_status" })
+    const btn = el("button.btn", { type: "button" }, icon("grid"), "Switch now")
+    btn.addEventListener("click", async () => {
+        const id = Number(select.value)
+        btn.disabled = true
+        status.textContent = "Switching…"
+        try {
+            await api.post("/api/face", { face: id })
+            setNowShowing(id)
+            status.textContent = ""
+        } catch (e) {
+            status.textContent = "Switch failed: the clock could not be reached."
+        } finally {
+            btn.disabled = false
+        }
+    })
+    return card("Switch face now", "Show a face immediately without touching the clock — handy when it is mounted out of reach. This is temporary, like the side buttons: it does not change the default face, schedule, or cycling settings.", el("div.stack",
+        nowShowing,
+        el("div.row", select, btn),
+        status), { id: "card_faceswitch" })
 }
 
 /**
@@ -1109,6 +1148,27 @@ function autoUpdateCard() {
     const hcRow = reactive(["healthcheck_url"], () => String(form.get("healthcheck_url") || "").trim()
         ? el("div.grid", field("healthcheck_interval_hours", "Heartbeat interval (hours)", numberInput("healthcheck_interval_hours")))
         : el("span", { hidden: true }))
+    // Manual test ping: posts one heartbeat right now using the URL as typed,
+    // so it can be verified before saving. Delivery is confirmed at the receiver.
+    const pingStatus = el("p.help", { id: "hc_ping_status" })
+    const pingBtn = el("button.btn", { type: "button" }, icon("bell"), "Send test ping")
+    pingBtn.addEventListener("click", async () => {
+        const url = String(form.get("healthcheck_url") || "").trim()
+        if (!url) {
+            pingStatus.textContent = "Enter a heartbeat URL first."
+            return
+        }
+        pingBtn.disabled = true
+        pingStatus.textContent = "Sending…"
+        try {
+            await api.post("/api/heartbeat/test", { url })
+            pingStatus.textContent = "Test ping sent — check your healthchecks.io dashboard or ntfy topic."
+        } catch (e) {
+            pingStatus.textContent = "Test ping failed: the clock could not send it."
+        } finally {
+            pingBtn.disabled = false
+        }
+    })
     return card("Automatic updates", "For a clock you can't reach on its own network: it checks for new releases and installs them by itself, and can report its status to a URL you watch.", el("div.stack",
         toggleRow("ota_auto_update", "Check for and install updates automatically", "Once a day (and shortly after every boot) the clock checks the release page and installs new firmware/filesystem images itself. Your settings — network, face, school mode — are kept."),
         hourRow,
@@ -1118,6 +1178,8 @@ function autoUpdateCard() {
             " to get alerted if the clock ever goes quiet, or ",
             el("a", { href: "https://ntfy.sh", target: "_blank", rel: "noopener noreferrer" }, "ntfy.sh"),
             " to receive the heartbeat as phone notifications."),
+        el("div.row", pingBtn),
+        pingStatus,
         hcRow), { id: "card_autoupdate" })
 }
 

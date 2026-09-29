@@ -159,6 +159,8 @@ The simulator lives in `simulator/` and is published to GitHub Pages automatical
 
 The Backup and restore card on the System tab downloads the clock's settings as a file and loads such a file back into the page, where you review it and save; WiFi settings are loaded only when you ask, and the web login never is. The file contains your WiFi and data source passwords, so keep it private.
 
+The **Automatic updates** card on the System tab has a **Send test ping** button next to the heartbeat URL: it posts one status heartbeat right now using the URL as typed, so you can verify the receiver (healthchecks.io, ntfy) before saving. On the Display tab, the **Switch face now** card shows any face immediately without touching the clock — handy when it is mounted out of reach. Like the side buttons, it is temporary and does not change the default face, schedule, or cycling settings.
+
 ### Alarm settings
 
 High, low, and urgent-low alarms each have their own threshold, snooze duration, sound, and optional alert windows in the Web UI.
@@ -236,6 +238,9 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
 ### Unreleased
 
 - Docs: clarified that with automatic updates on, the ~3-minute after-boot update check runs on every restart — so "Save and restart" in the web UI can itself install a pending update a few minutes later.
+- Web UI: added a **Send test ping** button next to the heartbeat URL (System tab → Automatic updates) that posts one status heartbeat immediately using the URL as typed, so the receiver can be verified before saving. New `POST /api/heartbeat/test` endpoint (authenticated).
+- Web UI: added a **Switch face now** card (Display tab) that shows any face immediately without touching the clock — for displays mounted out of reach. Temporary, like the side buttons: it does not change the default face, schedule, or cycling. New `POST /api/face` endpoint (authenticated); `/api/status` now also reports the current `faceId`.
+- Web UI: fixed the face list to match the firmware's 43 faces (was still showing the pre-critter order with Elsa/Anna).
 
 ### 1.4.0
 
