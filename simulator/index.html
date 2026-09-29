@@ -71,8 +71,9 @@ function fade(c){let r=(c>>11)&31,g=(c>>5)&63,b=c&31;
   r=(r*4/5)|0;g=(g*4/5)|0;b=(b*4/5)|0;return (r<<11)|(g<<5)|b;}
 function px(b,x,y,c){if(x>=0&&x<32&&y>=0&&y<8)b[y*32+x]=c|0;}
 function bitmap(b,x,y,bytes,w,h,color){
-  for(let r=0;r<h;r++)for(let c=0;c<w;c++){const i=r*w+c;
-    if((bytes[(i>>3)]>>(7-(i&7)))&1)px(b,x+c,y+r,color);}}
+  // Adafruit GFX drawBitmap semantics: one byte per row, MSB = leftmost pixel.
+  for(let r=0;r<h;r++)for(let c=0;c<w;c++){
+    if((bytes[r]>>(7-c))&1)px(b,x+c,y+r,color);}}
 // ---- text: Adafruit GFX custom-font semantics, pixel exact ----
 function charW(F,ch){const w=F.charMap[ch.charCodeAt(0)];return w===undefined?4:w;}
 function textW(F,s){let w=0;for(const ch of s)w+=charW(F,ch);return w;}
