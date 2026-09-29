@@ -29,7 +29,7 @@
 </head>
 <body>
 <h1>Nightscout Clock &mdash; Face Simulator</h1>
-<div class="sub">Pixel-exact preview of all 40 clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
+<div class="sub">Pixel-exact preview of all 41 clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
 <div class="controls">
   <div class="ctl"><label>Glucose</label><input id="glucose" type="range" min="40" max="400" value="142"><output id="glucoseOut">142</output></div>
   <div class="ctl"><label>Trend</label><select id="trend">
@@ -394,6 +394,82 @@ const FACES=[
 {name:"Mermaid",draw(b,t){critterFace(b,"Mermaid");}},
 {name:"Dinosaur",draw(b,t){critterFace(b,"Dinosaur");}},
 {name:"Butterfly",draw(b,t){critterFace(b,"Butterfly");}},
+{name:"Mario level",draw(b,t,st){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  const s=last?printable(last.sgv):noDataText(),vw=textW(AW,s);
+  const SPD=0.37/33;
+  const LEVEL_LEN=70,POLE_WX=96;
+  const T1=4500,T2=T1+1400,T3=T2+800,T4=T3+1000,T5=T4+1100,T6=T5+3500;
+  const tt=t%T6, offF=T2*SPD, poleSX=POLE_WX-offF;
+  const RED=rgb565(255,0,0),SKIN=rgb565(255,220,170),BLUE=rgb565(40,40,255),
+        GRN=rgb565(0,200,0),GRNL=rgb565(140,255,140),YLW=rgb565(255,220,0),
+        BRN=rgb565(150,90,30),BRND=rgb565(110,65,20),BLK=rgb565(0,0,0);
+  const MR=[".RRR.","RRRRR","RSKSR",".SSS.","BBBBB",".BBB.",".B.B.",
+            ".RRR.","RRRRR","RSKSR",".SSS.","BBBBB",".BBB.","..BB."];
+  const MC={R:RED,S:SKIN,B:BLUE,K:BLK};
+  const runF=((t/130)|0)%2;
+  function drawMario(mx,my,frame){
+    for(let r=0;r<7;r++)for(let c=0;c<5;c++){
+      const ch=MR[frame*7+r][c];if(ch==='.')continue;
+      const X=Math.round(mx)+c,Y=Math.round(my)+r;
+      if(X>=0&&X<32&&Y>=0&&Y<8)px(b,X,Y,MC[ch]);
+    }
+  }
+  let off=tt*SPD, mx=3, my=0, flagY=1, slide=false, showScene=true, bgX=32;
+  if(tt>=T2&&tt<T3){
+    off=offF;
+    const pr=(tt-T2)/(T3-T2);
+    mx=3+pr*((poleSX-2)-3);
+    my=-Math.round(3.2*Math.sin(Math.PI*pr));
+  }else if(tt>=T3&&tt<T4){
+    off=offF;
+    const pr=(tt-T3)/(T4-T3);
+    mx=poleSX-2; my=Math.round(-3.2+3.2*pr); flagY=1+Math.round(3*pr); slide=true;
+  }else if(tt>=T4&&tt<T5){
+    const pr=(tt-T4)/(T5-T4);
+    off=offF+pr*pr*70; mx=(POLE_WX-off)-2; my=0; flagY=4; slide=true;
+    const statsW=vw+1+5,cxT=Math.max(0,Math.trunc((32-statsW)/2));
+    bgX=Math.round(32-pr*(32-cxT));
+  }else if(tt>=T5){
+    showScene=false;
+    const statsW=vw+1+5;bgX=Math.max(0,Math.trunc((32-statsW)/2));
+  }
+  if(showScene){
+    for(let sx=0;sx<32;sx++){
+      const wx=sx+off;
+      if(wx<0||wx>POLE_WX+8)continue;
+      if(wx<LEVEL_LEN)px(b,sx,7,(((wx|0)%4)<2)?BRN:BRND);
+      const pm=((wx%36)+36)%36;
+      if(wx>=28&&wx<LEVEL_LEN&&pm<2){
+        for(let y=4;y<=6;y++)px(b,sx,y,GRN);
+        px(b,sx,4,GRNL);
+      }
+      const cm=((wx%20)+20)%20;
+      if(wx>=18&&wx<LEVEL_LEN&&cm<2){
+        const spin=((t/240)|0)%2;
+        if(!spin||cm===0){px(b,sx,2,YLW);px(b,sx,3,YLW);}
+      }
+      const bm=((wx%30)+30)%30;
+      if(wx>=22&&wx<LEVEL_LEN&&bm<3){
+        px(b,sx,4,BRN);px(b,sx,5,BRND);
+      }
+    }
+    const fx=Math.round(POLE_WX-off);
+    if(fx>=0&&fx<32){
+      for(let y=0;y<=6;y++)px(b,fx,y,GRN);
+      for(let dx=1;dx<=3;dx++)for(let dy=0;dy<2;dy++)if(fx+dx<32)px(b,fx+dx,flagY+dy,RED);
+      if(fx+1<32){px(b,fx,7,GRNL);px(b,fx+1,7,GRNL);}
+    }
+    drawMario(mx,my,slide?1:runF);
+  }
+  if(bgX<32){
+    let cx=bgX;
+    for(let i=0;i<s.length;i++){drawText(b,AW,s[i],cx,6,0,!last||old?S.stale:levelColor(last.sgv));cx+=textW(AW,s[i]);}
+    if(last)trendArrow(b,last,cx+1,1,old);
+    if(last)timerBlocks(b,last,32,0,7);
+  }
+}},
+
 ];
 
 // ================= ui =================
