@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <IPAddress.h>
 
-#define VERSION "1.5.0"
+#define VERSION "1.5.1"
 
 #include "enums.h"  // DISPLAY_COLOR etc.
 
