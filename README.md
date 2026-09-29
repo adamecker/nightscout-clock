@@ -14,7 +14,7 @@
 >
 > You can reach me at **artiom@gmail.com**.
 
-### Current version: 1.2.0
+### Current version: 1.3.0
 
 ![Build and Release](https://github.com/ktomy/nightscout-clock/actions/workflows/build_release.yml/badge.svg)
 
@@ -233,7 +233,7 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
 
 ## Changes
 
-### Unreleased
+### 1.3.0
 
 - Fixed the brightness overlay flickering when adjusting brightness with the middle button: it redrew every tick with a blank frame in between, and the light-sensor loop kept repainting the face underneath it. The overlay now redraws at most every 50 ms with no intermediate blank frame, and the light-sensor loop pauses while it is shown.
 - Middle-button brightness tweaks are now temporary (in-memory only, like the face schedule) instead of overwriting the saved settings. A long press on the middle button restores the brightness configured in the web UI, from any mode.
