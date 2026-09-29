@@ -278,8 +278,8 @@ const FACES=[
   const now=new Date();let h=now.getHours();const m=now.getMinutes(),s=now.getSeconds();let txt;
   if(S.h12){const ap=h<12?"AM":"PM";h=h%12===0?12:h%12;txt=`${h}:${String(m).padStart(2,'0')} ${ap}`;}
   else txt=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const n=txt.length,h0=((t/20)|0)&255;let x=0;
-  for(let i=0;i<n;i++){const hue=(((i*255)/Math.max(n,1))|0)+h0;drawText(b,AW,txt[i],x,6,2,hsv(hue));x+=textW(AW,txt[i],2);}
+  const n=txt.length,h0=((t/20)|0)&255;let x=((32-textW(AW,txt))|0)/2;
+  for(let i=0;i<n;i++){const hue=(((i*255)/Math.max(n,1))|0)+h0;drawText(b,AW,txt[i],x,6,0,hsv(hue));x+=textW(AW,txt[i]);}
 }},
 {name:"Nyan unicorn",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();

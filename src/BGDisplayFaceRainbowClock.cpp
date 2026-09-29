@@ -47,8 +47,10 @@ void BGDisplayFaceRainbowClock::showTime() const {
 
     uint8_t hueOffset = (millis() / 20) % 255;
     uint8_t textLength = strlen(text);
-    int16_t x = 0;
     DisplayManager.setFont(FONT_TYPE::MEDIUM);
+
+    // Center the whole string like Time only, then draw it character by character.
+    int16_t x = (MATRIX_WIDTH - DisplayManager.getTextWidth(text, 2)) / 2;
 
     for (uint8_t i = 0; i < textLength; i++) {
         char ch[2] = {text[i], '\0'};
