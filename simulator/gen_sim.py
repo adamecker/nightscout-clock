@@ -392,7 +392,7 @@ const FACES=[
   if(S.h12){const ap=h<12?"AM":"PM";h=h%12===0?12:h%12;txt=`${h}:${String(m).padStart(2,'0')} ${ap}`;}
   else txt=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   drawText(b,AW,txt,0,6,2,C.WHITE);
-}}
+}},
 {name:"Poop",draw(b,t){critterFace(b,"Poop");}},
 {name:"Cat",draw(b,t){critterFace(b,"Cat");}},
 {name:"Dog",draw(b,t){critterFace(b,"Dog");}},
@@ -454,7 +454,7 @@ HTML_HEAD = """<!DOCTYPE html>
 </head>
 <body>
 <h1>Nightscout Clock &mdash; Face Simulator</h1>
-<div class="sub">Pixel-exact preview of all 16 clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
+<div class="sub">Pixel-exact preview of all {FACECOUNT} clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
 <div class="controls">
   <div class="ctl"><label>Glucose</label><input id="glucose" type="range" min="40" max="400" value="142"><output id="glucoseOut">142</output></div>
   <div class="ctl"><label>Trend</label><select id="trend">
@@ -529,6 +529,7 @@ requestAnimationFrame(frame);
 </html>
 """
 
-html = HTML_HEAD + JS_DATA + JS_ENGINE + JS_FACES + HTML_TAIL
+face_count = JS_FACES.count('{name:')
+html = HTML_HEAD.replace('{FACECOUNT}', str(face_count)) + JS_DATA + JS_ENGINE + JS_FACES + HTML_TAIL
 open(os.path.join(HERE, 'index.html'), 'w').write(html)
-print("bytes:", len(html))
+print("faces:", face_count, "bytes:", len(html))
