@@ -26,11 +26,6 @@ SPARK = {
     'S': [0b00111100,0b01000010,0b10100101,0b10100101,0b10000001,0b10011001,0b10011001,0b00111100],
     'D': [0b00111100,0b01000010,0b10011001,0b00100100,0b10000001,0b01011010,0b01000010,0b00111100],
 }
-MINI = {
-    'happy':   [0b00111000,0b01000100,0b10101010,0b10000010,0b11000110,0b01000100,0b00111000],
-    'neutral': [0b00111000,0b01000100,0b10101010,0b10000010,0b10111010,0b01000100,0b00111000],
-    'sad':     [0b00111000,0b01000100,0b10101010,0b10000010,0b10000010,0b11000110,0b00111000],
-}
 # Upstream unicorn sprite (12x8, palette indices), palettes in RGB565
 UNICORN_SPRITE = [
     1,1,0,0,0,0,0,0,0,0,0,0,
@@ -44,13 +39,12 @@ UNICORN_SPRITE = [
 ]
 PAL_N = [0xFE87,0xF79D,0x18C3,0x4D5F,0x5EAD,0xFCC7,0xFA78,0x9AFE]
 
-JS_DATA = "const AW=%s;\nconst MU=%s;\nconst SMILEY=%s;\nconst ARROWS=%s;\nconst SPARK=%s;\nconst MINI=%s;\nconst USPRITE=%s;\nconst UPALN=%s;\n" % (
+JS_DATA = "const AW=%s;\nconst MU=%s;\nconst SMILEY=%s;\nconst ARROWS=%s;\nconst SPARK=%s;\nconst USPRITE=%s;\nconst UPALN=%s;\n" % (
     json.dumps(AW, separators=(',',':')),
     json.dumps(MU, separators=(',',':')),
     json.dumps(SMILEY, separators=(',',':')),
     json.dumps(ARROWS, separators=(',',':')),
     json.dumps(SPARK, separators=(',',':')),
-    json.dumps(MINI, separators=(',',':')),
     json.dumps(UNICORN_SPRITE, separators=(',',':')),
     json.dumps(PAL_N, separators=(',',':')),
 )
@@ -279,23 +273,6 @@ const FACES=[
     for(let i=0;i<s.length;i++){drawText(b,AW,s[i],x,6,0,old?S.stale:hsv(h0+i*35));x+=textW(AW,s[i]);}
     trendArrow(b,last,27,1,old);
   }
-}},
-{name:"Smiley stats",draw(b,t){
-  const last=READINGS[READINGS.length-1],old=isOld();
-  if(!last){bitmap(b,0,0,MINI.neutral,7,7,S.stale);drawText(b,AW,noDataText(),8,6,0,S.stale);return;}
-  const l=level(last.sgv),fall=(last.trend==='DOUBLE_DOWN'||last.trend==='SINGLE_DOWN');
-  let mb=MINI.happy,sc=C.GREEN;
-  if(l==='WL'||l==='UL'){mb=MINI.sad;sc=C.RED;}
-  else if(l==='WH'||l==='UH'||fall){mb=MINI.neutral;sc=C.YELLOW;}
-  if(old)sc=S.stale;
-  bitmap(b,0,0,mb,7,7,sc);
-  drawText(b,AW,printable(last.sgv),8,6,0,old?S.stale:levelColor(last.sgv));
-  if((((t/2500)|0)%2===1)&&READINGS.length>=2){
-    const d=last.sgv-READINGS[READINGS.length-2].sgv,ds=((d>=0?"+":"")+printable(d)).toUpperCase();
-    const towards=(last.sgv>180&&d<0)||(last.sgv<70&&d>0)||(last.sgv>=70&&last.sgv<=180);
-    drawText(b,AW,ds,31,6,1,old?S.stale:(towards?C.GREEN:C.YELLOW));
-  }else trendArrow(b,last,27,1,old);
-  timerBlocks(b,last,32,0,7);
 }},
 {name:"Nyan unicorn",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();

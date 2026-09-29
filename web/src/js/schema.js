@@ -74,11 +74,10 @@ const FACES = [
     { id: 8, name: "Rainbow big text" },
     { id: 9, name: "Smiley" },
     { id: 10, name: "Rainbow sparkle" },
-    { id: 11, name: "Smiley stats" },
-    { id: 12, name: "Nyan unicorn" },
-    { id: 13, name: "Custom title scroll" },
-    { id: 14, name: "Unicorn" },
-    { id: 15, name: "Time only" },
+    { id: 11, name: "Nyan unicorn" },
+    { id: 12, name: "Custom title scroll" },
+    { id: 13, name: "Unicorn" },
+    { id: 14, name: "Time only" },
 ]
 
 // The config stores the faces switched off, so a face added later starts active.

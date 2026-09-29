@@ -52,7 +52,6 @@ const MU={"bitmaps":[255,236,48,222,246,109,253,179,102,223,219,0,16,251,67,225,
 const SMILEY={"face_disc":[60,126,255,255,255,255,126,60],"features_happy":[0,0,36,0,66,60,0,0],"features_sad":[0,0,36,0,60,66,0,0],"features_angry":[0,0,66,36,0,60,66,0],"features_neutral":[0,0,36,0,0,60,0,0],"features_concerned":[0,0,24,36,0,60,66,0]};
 const ARROWS={"DOUBLE_UP":[80,248,80,80,80],"SINGLE_UP":[32,112,168,32,32],"FORTYFIVE_UP":[56,24,40,64,128],"FLAT":[32,16,248,16,32],"FORTYFIVE_DOWN":[128,64,40,24,56],"SINGLE_DOWN":[32,32,168,112,32],"DOUBLE_DOWN":[80,80,80,248,80],"NONE":[0,0,0,0,0],"OLD":[136,80,32,80,136]};
 const SPARK={"A":[60,66,165,129,165,153,66,60],"B":[60,66,165,129,129,189,66,60],"S":[60,66,165,165,129,153,153,60],"D":[60,66,153,36,129,90,66,60]};
-const MINI={"happy":[56,68,170,130,198,68,56],"neutral":[56,68,170,130,186,68,56],"sad":[56,68,170,130,130,198,56]};
 const USPRITE=[1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,4,5,6,7,0,0,0,0,0,1,1,4,4,4,5,6,7,0,0,0,0,0,2,2,2,2,4,5,6,7,0,2,2,2,2,3,2,2,4,5,6,7,0,2,2,2,2,2,2,2,4,5,6,7,0,0,2,2,2,2,2,2,4,5,6,7,0,0,0,0,2,2,2,2,2,4,5,6,7];
 const UPALN=[65159,63389,6339,19807,24237,64711,64120,39678];
 
@@ -277,23 +276,6 @@ const FACES=[
     for(let i=0;i<s.length;i++){drawText(b,AW,s[i],x,6,0,old?S.stale:hsv(h0+i*35));x+=textW(AW,s[i]);}
     trendArrow(b,last,27,1,old);
   }
-}},
-{name:"Smiley stats",draw(b,t){
-  const last=READINGS[READINGS.length-1],old=isOld();
-  if(!last){bitmap(b,0,0,MINI.neutral,7,7,S.stale);drawText(b,AW,noDataText(),8,6,0,S.stale);return;}
-  const l=level(last.sgv),fall=(last.trend==='DOUBLE_DOWN'||last.trend==='SINGLE_DOWN');
-  let mb=MINI.happy,sc=C.GREEN;
-  if(l==='WL'||l==='UL'){mb=MINI.sad;sc=C.RED;}
-  else if(l==='WH'||l==='UH'||fall){mb=MINI.neutral;sc=C.YELLOW;}
-  if(old)sc=S.stale;
-  bitmap(b,0,0,mb,7,7,sc);
-  drawText(b,AW,printable(last.sgv),8,6,0,old?S.stale:levelColor(last.sgv));
-  if((((t/2500)|0)%2===1)&&READINGS.length>=2){
-    const d=last.sgv-READINGS[READINGS.length-2].sgv,ds=((d>=0?"+":"")+printable(d)).toUpperCase();
-    const towards=(last.sgv>180&&d<0)||(last.sgv<70&&d>0)||(last.sgv>=70&&last.sgv<=180);
-    drawText(b,AW,ds,31,6,1,old?S.stale:(towards?C.GREEN:C.YELLOW));
-  }else trendArrow(b,last,27,1,old);
-  timerBlocks(b,last,32,0,7);
 }},
 {name:"Nyan unicorn",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();
