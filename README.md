@@ -14,7 +14,7 @@
 >
 > You can reach me at **artiom@gmail.com**.
 
-### Current version: 1.4.0
+### Current version: 1.5.0
 
 ![Build and Release](https://github.com/ktomy/nightscout-clock/actions/workflows/build_release.yml/badge.svg)
 
@@ -235,7 +235,7 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
 
 ## Changes
 
-### Unreleased
+### 1.5.0
 
 - Docs: clarified that with automatic updates on, the ~3-minute after-boot update check runs on every restart — so "Save and restart" in the web UI can itself install a pending update a few minutes later.
 - Web UI: added a **Send test ping** button next to the heartbeat URL (System tab → Automatic updates) that posts one status heartbeat immediately using the URL as typed, so the receiver can be verified before saving. New `POST /api/heartbeat/test` endpoint (authenticated).
