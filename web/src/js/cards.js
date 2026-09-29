@@ -1126,7 +1126,12 @@ function uploadOta(input, url, label) {
         let msg = `The clock answered ${xhr.status}.`
         try {
             const r = JSON.parse(xhr.responseText)
-            msg = r.status === "ok" ? `${label} uploaded, the clock is rebooting…` : `Update failed: ${r.error || r.status}`
+            if (r.status === "ok") {
+                msg = `${label} uploaded, the clock is rebooting…`
+                // A filesystem update can succeed while the settings restore
+                // fails; the clock then reboots onto its config fallbacks.
+                if (r.warning) msg += ` Warning: ${r.warning}.`
+            } else msg = `Update failed: ${r.error || r.status}`
         } catch (e) { /* keep the default message */ }
         done(msg)
     }

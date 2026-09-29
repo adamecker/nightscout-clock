@@ -8,8 +8,6 @@
 #include "SettingsAlarm.h"
 #include "globals.h"
 
-#define CONFIG_JSON_BAK "/config.bak"
-
 namespace {
 bool isValidFaceCycleInterval(int intervalSeconds) {
     return intervalSeconds == 10 || intervalSeconds == 30 || intervalSeconds == 60 ||
@@ -75,6 +73,13 @@ bool copyFile(const char* srcPath, const char* destPath) {
 
 void SettingsManager_::factoryReset() {
     copyFile(CONFIG_JSON_FACTORY, CONFIG_JSON);
+    // A factory reset is deliberate: clear the NVS Wi-Fi fallback too, or the
+    // next boot would resurrect the wiped credentials.
+    Preferences netPrefs;
+    netPrefs.begin("custom_net", false);
+    netPrefs.remove("ssid");
+    netPrefs.remove("pass");
+    netPrefs.end();
     LittleFS.end();
     ESP.restart();
 }
@@ -178,12 +183,26 @@ bool SettingsManager_::loadSettingsFromFile() {
     settings.ssid = (*doc)["ssid"].as<String>();
     settings.wifi_password = (*doc)["password"].as<String>();
 
-    // Mirror Wi-Fi credentials into NVS for safe keeping
     if (settings.ssid.length() > 0) {
+        // Mirror Wi-Fi credentials into NVS for safe keeping
         Preferences netPrefs;
         netPrefs.begin("custom_net", false);
         netPrefs.putString("ssid", settings.ssid);
         netPrefs.putString("pass", settings.wifi_password);
+        netPrefs.end();
+    } else {
+        // The config parsed but carries no Wi-Fi (e.g. a factory template
+        // after a failed settings restore). Recover the last known-good
+        // credentials from NVS. A deliberate Wi-Fi clear wipes NVS at save
+        // time, so this only fires on unintended loss.
+        Preferences netPrefs;
+        netPrefs.begin("custom_net", true);
+        String nvsSsid = netPrefs.getString("ssid", "");
+        if (nvsSsid.length() > 0) {
+            settings.ssid = nvsSsid;
+            settings.wifi_password = netPrefs.getString("pass", "");
+            DEBUG_PRINTLN("Recovered Wi-Fi credentials from NVS fallback");
+        }
         netPrefs.end();
     }
 
@@ -556,6 +575,23 @@ bool SettingsManager_::trySaveJsonAsSettings(JsonDocument doc) {
 
     // Automatically create a backup file every time settings are saved
     copyFile(CONFIG_JSON, CONFIG_JSON_BAK);
+
+    // Keep the NVS Wi-Fi fallback in sync with deliberate changes: a saved
+    // empty SSID clears it, so the fallback can't resurrect credentials the
+    // user removed on purpose. Skipped when the payload carries no Wi-Fi keys.
+    if (!doc["ssid"].isNull()) {
+        String savedSsid = doc["ssid"].as<String>();
+        Preferences netPrefs;
+        netPrefs.begin("custom_net", false);
+        if (savedSsid.length() > 0) {
+            netPrefs.putString("ssid", savedSsid);
+            netPrefs.putString("pass", doc["password"].as<String>());
+        } else {
+            netPrefs.remove("ssid");
+            netPrefs.remove("pass");
+        }
+        netPrefs.end();
+    }
 
     return true;
 }

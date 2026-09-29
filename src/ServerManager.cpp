@@ -247,6 +247,65 @@ static size_t otaFilesystemPartitionSize() {
     return part ? part->size : 0;
 }
 
+// Restore the settings backed up before a filesystem image was flashed,
+// verifying the write by reading the file back and parsing it as JSON.
+// On success the verified config is also written to /config.bak so the
+// layered config fallback keeps working on the fresh image. On any failure
+// the partial file is removed so boot falls back to /config.bak, the
+// factory template, then the NVS Wi-Fi credentials instead of choking on
+// a corrupt /config.json.
+static bool restoreOtaConfigBackup(const String& backup) {
+    if (!LittleFS.begin()) {
+        DEBUG_PRINTLN("OTA config restore: LittleFS remount failed");
+        return false;
+    }
+    bool ok = false;
+    // "w" truncates: the fresh image must not keep any factory config the
+    // backup would otherwise be appended to.
+    File f = LittleFS.open(CONFIG_JSON, "w");
+    if (f) {
+        ok = f.print(backup) == backup.length();
+        f.close();
+    }
+    if (ok) {
+        File r = LittleFS.open(CONFIG_JSON, "r");
+        String written = r ? r.readString() : String();
+        if (r) {
+            r.close();
+        }
+        if (written != backup) {
+            DEBUG_PRINTLN("OTA config restore: read-back mismatch");
+            ok = false;
+        } else {
+            JsonDocument doc;
+            DeserializationError err = deserializeJson(doc, written);
+            if (err != DeserializationError::Ok || !doc.is<JsonObject>()) {
+                DEBUG_PRINTF("OTA config restore: backup is not valid JSON: %s\n", err.c_str());
+                ok = false;
+            }
+        }
+    } else {
+        DEBUG_PRINTLN("OTA config restore: write failed");
+    }
+    if (!ok) {
+        LittleFS.remove(CONFIG_JSON);
+        return false;
+    }
+    // Re-establish the backup layer on the fresh image. A failure here is
+    // non-fatal: the primary config is verified good.
+    File b = LittleFS.open(CONFIG_JSON_BAK, "w");
+    bool bakOk = false;
+    if (b) {
+        bakOk = b.print(backup) == backup.length();
+        b.close();
+    }
+    if (!bakOk) {
+        DEBUG_PRINTLN("OTA config restore: could not write /config.bak");
+        LittleFS.remove(CONFIG_JSON_BAK);
+    }
+    return true;
+}
+
 void ServerManager_::handleUpdateUpload(AsyncWebServerRequest* request, const String& filename,
                                         size_t index, uint8_t* data, size_t len, bool final,
                                         int command) {
@@ -341,18 +400,24 @@ void ServerManager_::handleUpdateRequest(AsyncWebServerRequest* request) {
         request->send(400, "application/json", body);
         return;
     }
-    request->send(200, "application/json", "{\"status\": \"ok\"}");
+    // Restore the runtime settings into the new image BEFORE reporting success,
+    // so the UI never claims success when the settings were actually lost.
+    // A failed restore is reported as a warning: the update itself succeeded
+    // and the clock reboots onto its config fallbacks (backup, factory, NVS).
+    bool configOk = true;
     if (command == U_SPIFFS && otaConfigBackup.length() > 0) {
-        // Restore the runtime settings into the new image so the clock comes
-        // back on the same network, face and school mode.
-        if (LittleFS.begin()) {
-            File f = LittleFS.open(CONFIG_JSON, FILE_WRITE);
-            if (f) {
-                f.print(otaConfigBackup);
-                f.close();
-            }
-        }
+        configOk = restoreOtaConfigBackup(otaConfigBackup);
         otaConfigBackup = "";
+        if (!configOk) {
+            DEBUG_PRINTLN("OTA filesystem update: settings restore failed, using fallbacks");
+        }
+    }
+    if (configOk) {
+        request->send(200, "application/json", "{\"status\": \"ok\"}");
+    } else {
+        request->send(200, "application/json",
+                      "{\"status\": \"ok\", \"warning\": \"settings could not be restored; "
+                      "the clock will reboot with default settings\"}");
     }
     // Reboot into the new image after the response has been flushed.
     xTaskCreate(
@@ -634,12 +699,11 @@ void ServerManager_::otaPullTask(void* param) {
                             if (self->otaPullCommand == U_SPIFFS) {
                                 // Restore the runtime settings into the new image so the
                                 // clock comes back on the same network, face and school mode.
-                                if (LittleFS.begin() && self->otaConfigBackup.length() > 0) {
-                                    File f = LittleFS.open(CONFIG_JSON, FILE_WRITE);
-                                    if (f) {
-                                        f.print(self->otaConfigBackup);
-                                        f.close();
-                                    }
+                                // Verified: a failed restore removes the partial file so
+                                // boot falls back cleanly.
+                                if (self->otaConfigBackup.length() > 0 &&
+                                    !restoreOtaConfigBackup(self->otaConfigBackup)) {
+                                    DEBUG_PRINTLN("OTA pull: settings restore failed, using fallbacks");
                                 }
                                 self->otaConfigBackup = "";
                             }

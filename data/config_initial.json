@@ -53,6 +53,8 @@
     "librelinkup_password": "",
     "librelinkup_region": "EU",
     "librelinkup_patient_id": "",
+    "medtrum_email": "",
+    "medtrum_password": "",
     "additional_wifi_enable": false,
     "additional_wifi_type": "",
     "additional_ssid": "",
@@ -64,5 +66,9 @@
     "custom_nodatatimer": 20,
     "data_old_color": "gray",
     "web_auth_enable": false,
-    "web_auth_password": ""
+    "web_auth_password": "",
+    "ota_auto_update": false,
+    "ota_auto_update_hour": 3,
+    "healthcheck_url": "",
+    "healthcheck_interval_hours": 12
 }

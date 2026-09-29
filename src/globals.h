@@ -35,6 +35,7 @@
 // Keep in sync with BGDisplayManager_::setup().
 #define CLOCK_FACE_COUNT 45
 #define CONFIG_JSON "/config.json"
+#define CONFIG_JSON_BAK "/config.bak"
 #define CONFIG_JSON_FACTORY "/config_initial.json"
 #define WIFI_CONNECT_TIMEOUT 15000
 #define AP_MODE_PASSWORD ""
