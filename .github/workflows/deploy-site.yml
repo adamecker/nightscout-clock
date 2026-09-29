@@ -2,8 +2,9 @@ name: Deploy site on simulator changes
 
 # Publishes the GitHub Pages site (browser installer + face simulator) when
 # simulator/ or www/ changes on main, without cutting a firmware release.
-# Firmware binaries are reused from the most recent successful release build,
-# so the installer keeps serving the latest released firmware.
+# Firmware binaries are reused from the successful release build for the
+# checkout's version (never "latest", which would race an in-flight release),
+# so the installer keeps serving the released firmware that matches update.json.
 
 permissions:
   contents: read
@@ -38,16 +39,23 @@ jobs:
         uses: actions/checkout@v3
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      - name: Download latest release firmware artifacts
+      - name: Download release firmware artifacts for this version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          RUN_ID=$(gh run list --workflow build_release.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          # Pin the artifacts to the checkout's version. Taking "latest successful"
+          # here races the tag build: the version-bump push triggers this workflow
+          # while the v-* tag build is still running, and the previous release's
+          # binaries would be deployed under the new version's update.json.
+          VERSION=$(tr -d '[:space:]' < data/version.txt)
+          RUN_ID=$(gh run list --workflow build_release.yml --status success --limit 50 \
+            --json databaseId,headBranch \
+            --jq "[.[] | select(.headBranch == \"v-$VERSION\")][0].databaseId")
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-            echo "::error::No successful 'Build and deploy on Github Pages' run found. Publish a v-* release first."
+            echo "::error::No successful 'Build and deploy on Github Pages' run for v-$VERSION found. The release build is probably still running; re-run this workflow after it completes."
             exit 1
           fi
-          echo "Reusing firmware artifacts from run $RUN_ID"
+          echo "Reusing firmware artifacts from run $RUN_ID (v-$VERSION)"
           if ! gh run download "$RUN_ID" --name firmware --dir artifacts; then
             echo "::error::Could not download the 'firmware' artifact from run $RUN_ID (it may have expired). Publish a new v-* release first."
             exit 1
