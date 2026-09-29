@@ -14,6 +14,7 @@
 #include <mbedtls/sha256.h>
 
 #include "BGSourceManager.h"
+#include "BGDisplayManager.h"
 #include "DisplayManager.h"
 #include "PeripheryManager.h"
 #include "SettingsManager.h"
@@ -1308,6 +1309,22 @@ void ServerManager_::tickAutoUpdate() {
 }
 
 /**
+ * Map BG_SOURCE to a short human-readable name for the heartbeat payload.
+ */
+static const char* bgSourceName(BG_SOURCE source) {
+    switch (source) {
+        case BG_SOURCE::NIGHTSCOUT: return "nightscout";
+        case BG_SOURCE::DEXCOM: return "dexcom";
+        case BG_SOURCE::MEDTRONIC: return "medtronic";
+        case BG_SOURCE::API: return "api";
+        case BG_SOURCE::LIBRELINKUP: return "librelinkup";
+        case BG_SOURCE::MEDTRUM: return "medtrum";
+        case BG_SOURCE::NO_SOURCE:
+        default: return "none";
+    }
+}
+
+/**
  * Status heartbeat: POST a small JSON blob to the configured URL on a
  * schedule so the clock can be watched from anywhere. Works with
  * healthchecks.io (dead-man's-switch alerting), ntfy.sh (phone push), or
@@ -1350,9 +1367,25 @@ void ServerManager_::heartbeatTask(void* param) {
     doc["version"] = VERSION;
     doc["uptime_s"] = (int)(millis() / 1000);
     doc["rssi_dbm"] = WiFi.RSSI();
+    doc["ip"] = WiFi.localIP().toString();
     doc["school_mode"] = SettingsManager.settings.school_mode_active;
     doc["face"] = SettingsManager.settings.default_clockface;
+    doc["display_on"] = !MATRIX_OFF;
     doc["heap_free"] = (int)ESP.getFreeHeap();
+    // Battery (BATTERY_PERCENT/BATTERY_RAW are refreshed by PeripheryManager).
+    doc["battery_pct"] = BATTERY_PERCENT;
+    doc["battery_raw"] = BATTERY_RAW;
+    // BG data freshness: the most useful remote diagnostic on a BG clock.
+    doc["bg_source"] = bgSourceName(bgSourceManager.getCurrentSourceType());
+    doc["bg_status"] = bgSourceManager.getSourceStatus();
+    GlucoseReading* lastReading = bgDisplayManager.getLastDisplayedGlucoseReading();
+    if (lastReading != NULL && lastReading->epoch > 0) {
+        long long age = (long long)ServerManager.getUtcEpoch() - (long long)lastReading->epoch;
+        doc["bg_sgv"] = lastReading->sgv;
+        doc["bg_age_s"] = (int)(age > 0 ? age : 0);
+    } else {
+        doc["bg_age_s"] = -1;
+    }
     String body;
     serializeJson(doc, body);
     bool useTls = url.startsWith("https://");

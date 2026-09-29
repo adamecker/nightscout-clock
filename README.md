@@ -70,7 +70,7 @@ Firmware and the settings-page filesystem are separate update types with separat
 
 **Automatic self-update.** In the System tab → **Automatic updates**, enable "Check for and install updates automatically". The clock then checks the release manifest once shortly after boot and once a day at the configured hour (its local time) and installs new images itself — firmware and filesystem as needed. Made for clocks you can't reach on their own network: it only needs outbound internet. Updates always keep your settings — network, selected face, school mode, and the custom MAC address all survive — and the clock reports what it installed in its status heartbeat (below).
 
-**Status heartbeat (remote monitoring).** In the same card, set a heartbeat URL and the clock will POST a small JSON status (firmware version, uptime, WiFi signal, school mode, selected face) on a schedule plus shortly after every boot. Point it at [healthchecks.io](https://healthchecks.io) (free) to get alerted if the clock ever goes quiet, or at [ntfy.sh](https://ntfy.sh) to receive the heartbeat as phone notifications — no server or inbound connection needed. After a remote update, the heartbeat's `version` field confirms what the clock is running without visiting it.
+**Status heartbeat (remote monitoring).** In the same card, set a heartbeat URL and the clock will POST a small JSON status (firmware version, uptime, WiFi signal, IP address, school mode, selected face, display on/off, free heap, battery percent and raw ADC reading, BG source, BG source status, last glucose value, and seconds since the last reading — `-1` if no reading yet) on a schedule plus shortly after every boot. Point it at [healthchecks.io](https://healthchecks.io) (free) to get alerted if the clock ever goes quiet, or at [ntfy.sh](https://ntfy.sh) to receive the heartbeat as phone notifications — no server or inbound connection needed. After a remote update, the heartbeat's `version` field confirms what the clock is running without visiting it.
 
 ### One-time: enabling OTA partitions
 
@@ -232,6 +232,10 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - ...more... (if you are the author of a CGM data collecting app/service and you want your data to be displayed on the Nightscout Clock, please contact me)
 
 ## Changes
+
+### Unreleased
+
+- Enriched the status heartbeat payload with battery percent and raw ADC reading, IP address, display on/off state, BG source and source status, last glucose value, and seconds since the last reading (`-1` when no reading yet) — so a remote heartbeat shows whether the clock is actually receiving fresh BG data.
 
 ### 1.3.0
 
