@@ -876,9 +876,10 @@ function wifiCard() {
             field("password", "WiFi password", pw)),
         el("label.check", open, "Open WiFi network (no password)"),
         warn,
-        el("p.help", "If this network uses a captive portal that only lets known devices through, ",
-            "you can make the clock use another device's MAC address on the ",
-            el("a", { href: "/mac", target: "_blank", rel: "noopener noreferrer" }, "MAC setup page"), ".")), { id: "card_wifi" })
+        field("custom_mac", "Custom MAC address",
+            textInput("custom_mac", { placeholder: "A4:83:E7:2B:10:9C", maxlength: 17, trim: true }),
+            "If this network uses a captive portal that only lets known devices through, enter another device's MAC address here. Leave blank to use the clock's factory hardware MAC.")),
+        { id: "card_wifi" })
 }
 
 /**
