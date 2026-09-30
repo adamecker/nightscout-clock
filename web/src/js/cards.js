@@ -1039,10 +1039,20 @@ function updateCard() {
         installRow.hidden = true
         try {
             const r = await api.post("/api/update/check")
-            checkStatus.textContent = r.updateAvailable
-                ? `Update available: ${r.latest} (running ${r.current}).`
-                : `Up to date (${r.current}).`
-            installRow.hidden = !r.updateAvailable
+            const fwStale = !!r.updateAvailable
+            const fsStale = !!r.fsUpdateAvailable
+            installFwBtn.hidden = !fwStale
+            installFsBtn.hidden = !fsStale
+            installRow.hidden = !(fwStale || fsStale)
+            if (fwStale && fsStale) {
+                checkStatus.textContent = `Update available: ${r.latest} (firmware ${r.current}, filesystem ${r.fsCurrent || "unknown"}).`
+            } else if (fwStale) {
+                checkStatus.textContent = `Firmware update available: ${r.latest} (running ${r.current}).`
+            } else if (fsStale) {
+                checkStatus.textContent = `Filesystem update available: ${r.latest} (running ${r.fsCurrent || "unknown"}). Firmware is up to date (${r.current}).`
+            } else {
+                checkStatus.textContent = `Up to date (${r.current}).`
+            }
         } catch (e) {
             checkStatus.textContent = "Check failed: the clock could not reach the release site."
         }

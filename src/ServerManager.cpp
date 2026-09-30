@@ -478,10 +478,16 @@ void ServerManager_::handleUpdateCheck(AsyncWebServerRequest* request) {
     }
     String latest = doc["version"].as<const char*>();
     bool updateAvailable = latest.length() > 0 && latest != VERSION;
+    String fsVersion = readFilesystemVersion();
+    bool fsUpdateAvailable = latest.length() > 0 && latest != fsVersion;
     String body = "{\"status\": \"ok\", \"current\": \"" VERSION "\", \"latest\": \"";
     body += latest;
     body += "\", \"updateAvailable\": ";
     body += updateAvailable ? "true" : "false";
+    body += ", \"fsCurrent\": \"";
+    body += fsVersion;
+    body += "\", \"fsUpdateAvailable\": ";
+    body += fsUpdateAvailable ? "true" : "false";
     body += "}";
     request->send(200, "application/json", body);
 }
