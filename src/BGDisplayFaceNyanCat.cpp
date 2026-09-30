@@ -31,9 +31,7 @@ void BGDisplayFaceNyanCat::drawCat(int16_t x, int16_t y, uint8_t frame) const {
     uint16_t gray = DisplayManager.rgb565(170, 170, 170);
     uint16_t dkgray = DisplayManager.rgb565(100, 100, 100);
     uint16_t pink = DisplayManager.rgb565(255, 150, 200);
-    uint16_t tart = DisplayManager.rgb565(255, 180, 220);
-    uint16_t tartDark = DisplayManager.rgb565(255, 100, 150);
-    uint16_t sprink = DisplayManager.rgb565(255, 255, 0);
+    uint16_t pawPink = DisplayManager.rgb565(255, 105, 180);
     // Cat head (gray with ears)
     nyanCatPixel(x + 1, y + 0, gray, false); nyanCatPixel(x + 5, y + 0, gray, false);
     nyanCatPixel(x + 1, y + 1, gray, false); nyanCatPixel(x + 2, y + 1, gray, false);
@@ -46,22 +44,19 @@ void BGDisplayFaceNyanCat::drawCat(int16_t x, int16_t y, uint8_t frame) const {
     nyanCatPixel(x + 5, y + 3, gray, false);
     nyanCatPixel(x + 2, y + 4, gray, false); nyanCatPixel(x + 3, y + 4, dkgray, false);
     nyanCatPixel(x + 4, y + 4, gray, false);
-    // Pop-Tart body (pink with sprinkles)
-    nyanCatPixel(x + 6, y + 1, tart, false); nyanCatPixel(x + 7, y + 1, tart, false);
-    nyanCatPixel(x + 8, y + 1, tart, false);
-    nyanCatPixel(x + 6, y + 2, tart, false); nyanCatPixel(x + 7, y + 2, sprink, false);
-    nyanCatPixel(x + 8, y + 2, tart, false);
-    nyanCatPixel(x + 6, y + 3, tart, false); nyanCatPixel(x + 7, y + 3, tart, false);
-    nyanCatPixel(x + 8, y + 3, sprink, false);
-    nyanCatPixel(x + 6, y + 4, tart, false); nyanCatPixel(x + 7, y + 4, sprink, false);
-    nyanCatPixel(x + 8, y + 4, tart, false);
-    nyanCatPixel(x + 6, y + 5, tartDark, false); nyanCatPixel(x + 7, y + 5, tartDark, false);
-    nyanCatPixel(x + 8, y + 5, tartDark, false);
-    // Legs (animated)
+    // Cat body (gray, no Pop-Tart)
+    for (int8_t bx = 6; bx <= 8; bx++) {
+        nyanCatPixel(x + bx, y + 2, gray, false); nyanCatPixel(x + bx, y + 3, gray, false);
+        nyanCatPixel(x + bx, y + 4, gray, false); nyanCatPixel(x + bx, y + 5, gray, false);
+    }
+    nyanCatPixel(x + 9, y + 3, gray, false); nyanCatPixel(x + 9, y + 4, gray, false);
+    nyanCatPixel(x + 10, y + 2, gray, false);  // tail tip (up)
+    // Legs (animated, like unicorn: gray with pink paws)
     if (frame == 0) {
-        nyanCatPixel(x + 6, y + 6, gray, false); nyanCatPixel(x + 8, y + 6, gray, false);
+        nyanCatPixel(x + 6, y + 6, gray, false); nyanCatPixel(x + 6, y + 7, pawPink, false);
+        nyanCatPixel(x + 8, y + 6, gray, false); nyanCatPixel(x + 8, y + 7, pawPink, false);
     } else {
-        nyanCatPixel(x + 7, y + 6, gray, false);
+        nyanCatPixel(x + 7, y + 6, gray, false); nyanCatPixel(x + 7, y + 7, pawPink, false);
     }
 }
 
