@@ -885,7 +885,7 @@ function alertWindows(a) {
  * @returns {HTMLElement}
  */
 function systemTab() {
-    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), autoUpdateCard(), versionCard())
+    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), filesystemCard(), autoUpdateCard(), versionCard())
 }
 
 /**
@@ -1017,55 +1017,78 @@ async function loadSettingsFile(input) {
 }
 
 /**
- * Build the network firmware/filesystem update card: pick a .bin built from this
+ * Build the network firmware update card: pick a firmware.bin built from this
  * repo, upload it to the matching endpoint, watch progress, and let the clock reboot.
  * @returns {HTMLElement}
  */
 function updateCard() {
     const fwInput = el("input", { type: "file", accept: ".bin", hidden: true })
-    const fsInput = el("input", { type: "file", accept: ".bin", hidden: true })
     const bar = el("progress", { id: "ota_bar", max: "100", value: "0", hidden: true })
     const status = el("p.help", { id: "ota_status" }, "The clock reboots into the new image after a successful update.")
     const checkStatus = el("p.help", { id: "ota_check" })
-    const installRow = el("div.row", { hidden: true })
-    const installFwBtn = el("button.btn", { type: "button" }, icon("download"), "Install firmware")
-    const installFsBtn = el("button.btn", { type: "button" }, icon("download"), "Install filesystem")
+    const installFwBtn = el("button.btn", { type: "button", hidden: true }, icon("download"), "Install firmware")
     installFwBtn.addEventListener("click", () => applyOta("firmware"))
-    installFsBtn.addEventListener("click", () => applyOta("filesystem"))
-    installRow.append(installFwBtn, installFsBtn)
     const checkBtn = el("button.btn", { type: "button" }, icon("refresh"), "Check for updates")
     checkBtn.addEventListener("click", async () => {
         checkStatus.textContent = "Checking…"
-        installRow.hidden = true
+        installFwBtn.hidden = true
         try {
             const r = await api.post("/api/update/check")
-            const fwStale = !!r.updateAvailable
-            const fsStale = !!r.fsUpdateAvailable
-            installFwBtn.hidden = !fwStale
-            installFsBtn.hidden = !fsStale
-            installRow.hidden = !(fwStale || fsStale)
-            if (fwStale && fsStale) {
-                checkStatus.textContent = `Update available: ${r.latest} (firmware ${r.current}, filesystem ${r.fsCurrent || "unknown"}).`
-            } else if (fwStale) {
+            if (r.updateAvailable) {
                 checkStatus.textContent = `Firmware update available: ${r.latest} (running ${r.current}).`
-            } else if (fsStale) {
-                checkStatus.textContent = `Filesystem update available: ${r.latest} (running ${r.fsCurrent || "unknown"}). Firmware is up to date (${r.current}).`
+                installFwBtn.hidden = false
             } else {
-                checkStatus.textContent = `Up to date (${r.current}).`
+                checkStatus.textContent = `Firmware up to date (${r.current}).`
             }
         } catch (e) {
             checkStatus.textContent = "Check failed: the clock could not reach the release site."
         }
     })
     fwInput.addEventListener("change", () => uploadOta(fwInput, "/api/update/firmware", "firmware"))
-    fsInput.addEventListener("change", () => uploadOta(fsInput, "/api/update/filesystem", "filesystem"))
-    return card("Firmware update", "Update over the network: the clock can download a release itself (works from anywhere it has internet), or you can upload firmware.bin / littlefs.bin from this browser. The clock reboots into the new image after a successful update.", el("div.stack",
+    return card("Firmware update", "Update over the network: the clock can download a release itself (works from anywhere it has internet), or you can upload firmware.bin from this browser. The clock reboots into the new image after a successful update.", el("div.stack",
         el("div.row", checkBtn),
-        checkStatus, installRow,
+        checkStatus, installFwBtn,
         el("div.row",
-            el("button.btn", { type: "button", onclick: () => fwInput.click() }, icon("upload"), "Upload firmware", fwInput),
-            el("button.btn", { type: "button", onclick: () => fsInput.click() }, icon("upload"), "Upload filesystem", fsInput)),
+            el("button.btn", { type: "button", onclick: () => fwInput.click() }, icon("upload"), "Upload firmware", fwInput)),
         bar, status), { id: "card_update" })
+}
+
+/**
+ * Build the network filesystem update card: pick a littlefs.bin built from this
+ * repo, upload it to the matching endpoint, watch progress, and let the clock reboot.
+ * The filesystem carries the web UI; its version is tracked separately from firmware.
+ * @returns {HTMLElement}
+ */
+function filesystemCard() {
+    const fsInput = el("input", { type: "file", accept: ".bin", hidden: true })
+    const bar = el("progress", { id: "ota_fs_bar", max: "100", value: "0", hidden: true })
+    const status = el("p.help", { id: "ota_fs_status" }, "Your settings are kept. The clock reboots into the new image after a successful update.")
+    const checkStatus = el("p.help", { id: "ota_fs_check" })
+    const installFsBtn = el("button.btn", { type: "button", hidden: true }, icon("download"), "Install filesystem")
+    installFsBtn.addEventListener("click", () => applyOta("filesystem"))
+    const checkBtn = el("button.btn", { type: "button" }, icon("refresh"), "Check for updates")
+    checkBtn.addEventListener("click", async () => {
+        checkStatus.textContent = "Checking…"
+        installFsBtn.hidden = true
+        try {
+            const r = await api.post("/api/update/check")
+            if (r.fsUpdateAvailable) {
+                checkStatus.textContent = `Filesystem update available: ${r.latest} (running ${r.fsCurrent || "unknown"}).`
+                installFsBtn.hidden = false
+            } else {
+                checkStatus.textContent = `Filesystem up to date (${r.fsCurrent || r.current}).`
+            }
+        } catch (e) {
+            checkStatus.textContent = "Check failed: the clock could not reach the release site."
+        }
+    })
+    fsInput.addEventListener("change", () => uploadOta(fsInput, "/api/update/filesystem", "filesystem"))
+    return card("Filesystem update", "The filesystem carries the web UI and its version is tracked separately from firmware. The clock can download a release itself (works from anywhere it has internet), or you can upload littlefs.bin from this browser.", el("div.stack",
+        el("div.row", checkBtn),
+        checkStatus, installFsBtn,
+        el("div.row",
+            el("button.btn", { type: "button", onclick: () => fsInput.click() }, icon("upload"), "Upload filesystem", fsInput)),
+        bar, status), { id: "card_filesystem" })
 }
 
 /**
@@ -1074,7 +1097,8 @@ function updateCard() {
  * @returns {Promise<void>}
  */
 async function applyOta(type) {
-    const bar = $("#ota_bar"), status = $("#ota_status")
+    const bar = type === "filesystem" ? $("#ota_fs_bar") : $("#ota_bar"),
+        status = type === "filesystem" ? $("#ota_fs_status") : $("#ota_status")
     const fail = msg => { bar.hidden = true; status.textContent = msg }
     try {
         await api.post(`/api/update/apply?type=${type}`)
@@ -1123,7 +1147,9 @@ function uploadOta(input, url, label) {
     const file = input.files[0]
     input.value = ""
     if (!file) return
-    const bar = $("#ota_bar"), status = $("#ota_status")
+    const isFs = label === "filesystem"
+    const bar = isFs ? $("#ota_fs_bar") : $("#ota_bar"),
+        status = isFs ? $("#ota_fs_status") : $("#ota_status")
     bar.hidden = false
     bar.value = 0
     status.textContent = `Uploading ${label} (${file.name})…`
