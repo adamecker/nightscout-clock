@@ -186,6 +186,8 @@ const uint8_t spriteButterfly[13 * 8] PROGMEM = {
 
 }  // namespace
 
+BGDisplayFaceCritter::BGDisplayFaceCritter(CritterId id) : critterId(id) {}
+
 const uint8_t* BGDisplayFaceCritter::getSprite() const {
     switch (critterId) {
         case CritterId::CAT: return spriteCat;
