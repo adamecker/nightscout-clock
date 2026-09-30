@@ -4,41 +4,30 @@
 #include "BGDisplayFaceTextBase.h"
 #include "BGDisplayFaceWithAge.h"
 
-// Cute character faces. Each critter is a 12x8 sprite; the body color
+// Cute character faces. Each critter is a 13x8 sprite; the body color
 // follows the glucose level (natural/yellow/red) or goes gray when stale.
+// Palette: 0=transparent, 1=body (dynamic), 2=accent, 3=eye, 4-7=extra static colors.
 enum class CritterId : uint8_t {
-    POOP = 0,
-    CAT,
+    CAT = 0,
     DOG,
     FROG,
-    OWL,
     FOX,
     BUNNY,
     // Animals
     NARWHAL,
     WHALE,
-    OCTOPUS,
-    TURTLE,
-    MONKEY,
     // Mario
     MARIO,
     LUIGI,
     PEACH,
     TOAD,
-    YOSHI,
-    // Frozen
-    OLAF,
     // Halloween / Fall
     PUMPKIN,
     GHOST,
-    BAT,
     WITCH,
     TURKEY,
     // Other cute
-    MERMAID,
-    DINOSAUR,
     BUTTERFLY,
-    BEE,
     COUNT
 };
 
