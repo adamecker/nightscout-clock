@@ -10,6 +10,7 @@
 #include "BGDisplayFace.h"
 #include "BGDisplayFaceBatteryUptime.h"
 #include "BGDisplayFaceBigText.h"
+#include "BGDisplayFaceBigTextWithAge.h"
 #include "BGDisplayFaceBigTextRainbow.h"
 #include "BGDisplayFaceClock.h"
 #include "BGDisplayFaceDiagnostics.h"
@@ -100,9 +101,18 @@ private:
     unsigned long lastFrequentRefreshMillis = 0;
     unsigned long long lastRefreshEpoch = 0;
     bool brightnessOverlayWasActive = false;
+    // Unicorn mode: when enabled and a new reading is exactly 100, the Nyan
+    // unicorn runs across once, then the static unicorn face stays until the
+    // next reading arrives.
+    bool unicornModeActive = false;
+    bool unicornNyanDone = false;
+    unsigned long unicornNyanStartMs = 0;
+    int nyanUnicornFaceIndex = -1;
+    int unicornFaceIndex = -1;
 
     void configureActiveFaces();
     void updateFaceCycle();
+    void updateUnicornMode();
     void configureFaceSchedule();
     void updateFaceSchedule();
     void applyScheduleEntry(const FaceScheduleEntry& entry);

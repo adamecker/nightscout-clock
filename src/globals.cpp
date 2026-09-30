@@ -12,6 +12,9 @@ bool SENSOR_READING = true;
 uint8_t BATTERY_PERCENT;
 uint16_t BATTERY_RAW;
 bool MATRIX_OFF;
-uint8_t MIN_BRIGHTNESS = 1;
+// Floor raised from 1 to 8: below ~8 the NeoPixels lose color accuracy
+// (red shift as green/blue drop out first) and pale sprites like the
+// narwhal scale to invisible. 8/255 is still very dim for a dark room.
+uint8_t MIN_BRIGHTNESS = 8;
 uint8_t MAX_BRIGHTNESS = 120;
 const String sound_boot PROGMEM = "boot:d=4,o=5,b=320:32c,32e,32g";

@@ -231,6 +231,7 @@ bool SettingsManager_::loadSettingsFromFile() {
     settings.face_cycle_enabled = (*doc)["face_cycle_enabled"] | false;
     settings.face_cycle_interval_seconds = (*doc)["face_cycle_interval_seconds"] | 60;
     settings.school_mode_active = (*doc)["school_mode_active"] | false;
+    settings.unicorn_mode = (*doc)["unicorn_mode"] | false;
     settings.school_mode_faces.clear();
     for (JsonVariant f : (*doc)["school_mode_faces"].as<JsonArray>()) {
         settings.school_mode_faces.push_back(f.as<int>());
@@ -432,6 +433,7 @@ bool SettingsManager_::saveSettingsToFile() {
     (*doc)["face_cycle_enabled"] = settings.face_cycle_enabled;
     (*doc)["face_cycle_interval_seconds"] = settings.face_cycle_interval_seconds;
     (*doc)["school_mode_active"] = settings.school_mode_active;
+    (*doc)["unicorn_mode"] = settings.unicorn_mode;
     for (int f : settings.school_mode_faces) {
         (*doc)["school_mode_faces"].add(f);
     }

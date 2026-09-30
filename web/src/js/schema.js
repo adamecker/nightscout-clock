@@ -424,6 +424,7 @@ function normalizeLoaded(c) {
     const active = activeFaceIds(out.inactive_faces)
     if (active.length && !active.includes(out.default_face)) out.default_face = active[0]
     out.school_mode_active = !!out.school_mode_active
+    out.unicorn_mode = !!out.unicorn_mode
     return out
 }
 

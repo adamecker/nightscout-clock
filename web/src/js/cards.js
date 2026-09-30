@@ -246,7 +246,7 @@ function toast(message, kind = "ok", ms = 4500) {
  * @returns {HTMLElement}
  */
 function displayTab() {
-    return el("div.stack", facesCard(), faceSwitchCard(), schoolModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
+    return el("div.stack", facesCard(), faceSwitchCard(), schoolModeCard(), unicornModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
 }
 
 /**
@@ -359,6 +359,14 @@ function schoolModeCard() {
         return el("div.field", { dataset: { field: "school_mode_faces" } }, list, el("p.err", { hidden: true }))
     })
     return card("School mode", null, el("div.stack", toggle, faces), { id: "card_school" })
+}
+
+/** Unicorn-mode toggle: when on and BG hits exactly 100, the Nyan unicorn
+ * runs across the screen, then the unicorn face stays until the next reading. */
+function unicornModeCard() {
+    const toggle = toggleRow("unicorn_mode", "Unicorn mode",
+        "When BG is exactly 100, the Nyan unicorn runs across the screen, then the unicorn face stays until the next reading arrives.")
+    return card("Unicorn mode", null, el("div.stack", toggle), { id: "card_unicorn" })
 }
 
 /**

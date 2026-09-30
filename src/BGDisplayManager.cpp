@@ -44,64 +44,68 @@ void BGDisplayManager_::setup() {
     facesNames[2] = "Graph and BG";
     faces.push_back(new BGDisplayFaceBigText());
     facesNames[3] = "Big text";
+    faces.push_back(new BGDisplayFaceBigTextWithAge());
+    facesNames[4] = "Big text + age";
     faces.push_back(new BGDisplayFaceValueAndDiff());
-    facesNames[4] = "Value and diff";
+    facesNames[5] = "Value and diff";
     faces.push_back(new BGDisplayFaceClock());
-    facesNames[5] = "Clock and value";
+    facesNames[6] = "Clock and value";
     faces.push_back(new BGDisplayFaceDiagnostics());
-    facesNames[6] = "Diagnostics";
+    facesNames[7] = "Diagnostics";
     faces.push_back(new BGDisplayFaceBatteryUptime());
-    facesNames[7] = "Battery and uptime";
+    facesNames[8] = "Battery and uptime";
     faces.push_back(new BGDisplayFaceBigTextRainbow());
-    facesNames[8] = "Rainbow big text";
+    facesNames[9] = "Rainbow big text";
     faces.push_back(new BGDisplayFaceSmiley());
-    facesNames[9] = "Smiley";
+    facesNames[10] = "Smiley";
     faces.push_back(new BGDisplayFaceRainbowSparkle());
-    facesNames[10] = "Rainbow sparkle";
+    facesNames[11] = "Rainbow sparkle";
     faces.push_back(new BGDisplayFaceRainbowClock());
-    facesNames[11] = "Rainbow clock";
+    facesNames[12] = "Rainbow clock";
     faces.push_back(new BGDisplayFaceNyanUnicorn());
-    facesNames[12] = "Nyan unicorn";
+    nyanUnicornFaceIndex = faces.size() - 1;
+    facesNames[13] = "Nyan unicorn";
     faces.push_back(new BGDisplayFaceTitleScroll());
-    facesNames[13] = "Custom title scroll";
+    facesNames[14] = "Custom title scroll";
     faces.push_back(new BGDisplayFaceUnicorn());
-    facesNames[14] = "Unicorn";
+    unicornFaceIndex = faces.size() - 1;
+    facesNames[15] = "Unicorn";
     faces.push_back(new BGDisplayFaceTimeOnly());
-    facesNames[15] = "Time only";
+    facesNames[16] = "Time only";
     faces.push_back(new BGDisplayFaceNyanCat());
-    facesNames[16] = "Nyan cat";
+    facesNames[17] = "Nyan cat";
     faces.push_back(new BGDisplayFaceCritter(CritterId::CAT));
-    facesNames[17] = "Cat";
+    facesNames[18] = "Cat";
     faces.push_back(new BGDisplayFaceCritter(CritterId::DOG));
-    facesNames[18] = "Dog";
+    facesNames[19] = "Dog";
     faces.push_back(new BGDisplayFaceCritter(CritterId::FROG));
-    facesNames[19] = "Frog";
+    facesNames[20] = "Frog";
     faces.push_back(new BGDisplayFaceCritter(CritterId::FOX));
-    facesNames[20] = "Fox";
+    facesNames[21] = "Fox";
     faces.push_back(new BGDisplayFaceCritter(CritterId::BUNNY));
-    facesNames[21] = "Bunny";
+    facesNames[22] = "Bunny";
     faces.push_back(new BGDisplayFaceCritter(CritterId::NARWHAL));
-    facesNames[22] = "Narwhal";
+    facesNames[23] = "Narwhal";
     faces.push_back(new BGDisplayFaceCritter(CritterId::WHALE));
-    facesNames[23] = "Whale";
+    facesNames[24] = "Whale";
     faces.push_back(new BGDisplayFaceCritter(CritterId::MARIO));
-    facesNames[24] = "Mario";
+    facesNames[25] = "Mario";
     faces.push_back(new BGDisplayFaceCritter(CritterId::LUIGI));
-    facesNames[25] = "Luigi";
+    facesNames[26] = "Luigi";
     faces.push_back(new BGDisplayFaceCritter(CritterId::PEACH));
-    facesNames[26] = "Peach";
+    facesNames[27] = "Peach";
     faces.push_back(new BGDisplayFaceCritter(CritterId::TOAD));
-    facesNames[27] = "Toad";
+    facesNames[28] = "Toad";
     faces.push_back(new BGDisplayFaceCritter(CritterId::PUMPKIN));
-    facesNames[28] = "Pumpkin";
+    facesNames[29] = "Pumpkin";
     faces.push_back(new BGDisplayFaceCritter(CritterId::GHOST));
-    facesNames[29] = "Ghost";
+    facesNames[30] = "Ghost";
     faces.push_back(new BGDisplayFaceCritter(CritterId::WITCH));
-    facesNames[30] = "Witch";
+    facesNames[31] = "Witch";
     faces.push_back(new BGDisplayFaceCritter(CritterId::TURKEY));
-    facesNames[31] = "Turkey";
+    facesNames[32] = "Turkey";
     faces.push_back(new BGDisplayFaceCritter(CritterId::BUTTERFLY));
-    facesNames[32] = "Butterfly";
+    facesNames[33] = "Butterfly";
 
     if (faces.size() != CLOCK_FACE_COUNT) {
         DEBUG_PRINTF(
@@ -248,6 +252,17 @@ void BGDisplayManager_::updateFaceCycle() {
     }
 }
 
+void BGDisplayManager_::updateUnicornMode() {
+    if (!unicornModeActive || unicornNyanDone) return;
+    // Let the Nyan run across once (~3s) plus its pause, then switch to the static unicorn face.
+    if (millis() - unicornNyanStartMs >= 8000) {
+        if (unicornFaceIndex >= 0) {
+            setFace(unicornFaceIndex);
+            unicornNyanDone = true;
+        }
+    }
+}
+
 void BGDisplayManager_::tick() {
     const bool brightnessOverlayActive = DisplayManager.isBrightnessOverlayActive();
     if (brightnessOverlayActive) {
@@ -264,6 +279,7 @@ void BGDisplayManager_::tick() {
 
     updateFaceSchedule();
     updateFaceCycle();
+    updateUnicornMode();
     if (!MATRIX_OFF && currentFace != nullptr && currentFace->needsFrequentRefresh()) {
         unsigned long currentMillis = millis();
         if (currentMillis - lastFrequentRefreshMillis >= currentFace->getFrequentRefreshIntervalMs()) {
@@ -397,11 +413,26 @@ void BGDisplayManager_::maybeRrefreshScreen(bool force) {
 void BGDisplayManager_::showData(std::list<GlucoseReading> glucoseReadings) {
     if (glucoseReadings.size() == 0) {
         displayedReadings.clear();
+        unicornModeActive = false;
         runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
         return;
     }
 
     displayedReadings = glucoseReadings;
+
+    // Unicorn mode: a new reading of exactly 100 triggers the Nyan run.
+    // Any other new reading ends the unicorn sequence.
+    if (SettingsManager.settings.unicorn_mode && glucoseReadings.back().sgv == 100) {
+        if (nyanUnicornFaceIndex >= 0) {
+            unicornModeActive = true;
+            unicornNyanDone = false;
+            unicornNyanStartMs = millis();
+            setFace(nyanUnicornFaceIndex);
+        }
+    } else {
+        unicornModeActive = false;
+    }
+
     runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
 }
 

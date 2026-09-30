@@ -209,6 +209,12 @@ const FACES=[
   drawText(b,MU,s,0,7,0,!last||old?S.stale:levelColor(last.sgv));
   if(last)trendArrow(b,last,27,1,old);
 }},
+{name:"Big Text + Age",draw(b,t){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  const s=last?printable(last.sgv):noDataText();
+  drawText(b,MU,s,0,7,0,!last||old?S.stale:levelColor(last.sgv));
+  if(last){trendArrow(b,last,27,0,old);timerBlocks(b,last,5,27,7);}
+}},
 {name:"Value and diff",draw(b,t){
   const last=READINGS[READINGS.length-1],old=isOld();
   if(!last){drawText(b,AW,noDataText(),13,6,1,S.stale);return;}
