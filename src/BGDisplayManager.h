@@ -21,6 +21,7 @@
 #include "BGDisplayFaceRainbowClock.h"
 #include "BGDisplayFaceCritter.h"
 #include "BGDisplayFaceNyanUnicorn.h"
+#include "BGDisplayFaceNyanCat.h"
 #include "BGDisplayFaceTitleScroll.h"
 #include "BGDisplayFaceTimeOnly.h"
 #include "BGDisplayFaceUnicorn.h"
