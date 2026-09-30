@@ -377,7 +377,7 @@ const FACES=[
   // Tail (up, trailing left)
   P(0,2,GRAY);P(0,3,GRAY);P(0,4,GRAY);
   // Cat body (gray)
-  for(let bx=1;bx<=3;bx++){P(bx,2,GRAY);P(bx,3,GRAY);P(bx,4,GRAY);P(bx,5,GRAY);}
+  for(let bx=1;bx<=4;bx++){P(bx,2,GRAY);P(bx,3,GRAY);P(bx,4,GRAY);P(bx,5,GRAY);}
   // Cat head (gray with ears, leading right)
   P(5,0,GRAY);P(9,0,GRAY);  // ear tips
   P(5,1,GRAY);P(6,1,GRAY);P(8,1,GRAY);P(9,1,GRAY);  // ears + head top

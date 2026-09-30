@@ -36,7 +36,7 @@ void BGDisplayFaceNyanCat::drawCat(int16_t x, int16_t y, uint8_t frame) const {
     nyanCatPixel(x + 0, y + 2, gray, false); nyanCatPixel(x + 0, y + 3, gray, false);
     nyanCatPixel(x + 0, y + 4, gray, false);
     // Cat body (gray)
-    for (int8_t bx = 1; bx <= 3; bx++) {
+    for (int8_t bx = 1; bx <= 4; bx++) {
         nyanCatPixel(x + bx, y + 2, gray, false); nyanCatPixel(x + bx, y + 3, gray, false);
         nyanCatPixel(x + bx, y + 4, gray, false); nyanCatPixel(x + bx, y + 5, gray, false);
     }
