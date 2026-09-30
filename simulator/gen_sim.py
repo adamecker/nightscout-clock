@@ -355,6 +355,44 @@ const FACES=[
   for(let i=0;i<s.length;i++){drawText(b,AW,s[i],cx,6,0,!last||old?S.stale:hsv(h0+i*35));cx+=textW(AW,s[i]);}
   if(last)trendArrow(b,last,arrX,1,old);
 }},
+{name:"Nyan cat",draw(b,t,st){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  const s=last?printable(last.sgv):noDataText(),vw=textW(AW,s);
+  // Same scroll as Nyan unicorn: 0.37px per 33ms, pause 3.5s parked right, then wrap.
+  const SPD=0.37/33,X0=-12,XP=24,XE=32+vw+18,T1=(XP-X0)/SPD,T2=T1+3500,T3=T2+(XE-XP)/SPD;
+  const tt=t%T3;
+  const ux=Math.trunc(tt<T1?X0+tt*SPD:(tt<T2?XP:XP+(tt-T2)*SPD));
+  const wave=((t/110)|0)%4,tEnd=ux+1,tStart=ux-10;
+  const bgX=tStart-vw-2,arrX=bgX+vw+1;
+  const NY=[rgb565(255,0,55),rgb565(255,140,0),rgb565(255,235,0),rgb565(0,255,60),rgb565(160,40,255)];
+  for(let x=Math.max(0,tStart);x<=Math.min(31,tEnd);x++){
+    const seg=((((x/2)|0)+wave)%2),yB=seg===0?1:2;
+    for(let q=0;q<5;q++)px(b,x,yB+q,NY[q]);
+    if(((x+wave)%5)===0)px(b,x,seg===0?7:0,C.WHITE);
+  }
+  // Nyan Cat: gray head, pink Pop-Tart body, rainbow trail
+  const GRAY=rgb565(170,170,170),DKGRAY=rgb565(100,100,100),PNK=rgb565(255,150,200),
+        PINK=rgb565(255,100,150),TART=rgb565(255,180,220),SPRINK=rgb565(255,255,0);
+  const P=(dx,dy,c)=>{const X=ux+dx;if(X>=0&&X<32&&dy>=0&&dy<8)px(b,X,dy,c);};
+  // Cat head (gray with ears)
+  P(1,0,GRAY);P(5,0,GRAY);  // ear tips
+  P(1,1,GRAY);P(2,1,GRAY);P(4,1,GRAY);P(5,1,GRAY);  // ears + head top
+  P(1,2,GRAY);P(2,2,DKGRAY);P(3,2,GRAY);P(4,2,DKGRAY);P(5,2,GRAY);  // eyes (dark)
+  P(1,3,GRAY);P(2,3,PNK);P(3,3,GRAY);P(4,3,PNK);P(5,3,GRAY);  // cheeks (pink)
+  P(2,4,GRAY);P(3,4,DKGRAY);P(4,4,GRAY);  // mouth
+  // Pop-Tart body (pink with sprinkles)
+  P(6,1,TART);P(7,1,TART);P(8,1,TART);
+  P(6,2,TART);P(7,2,SPRINK);P(8,2,TART);
+  P(6,3,TART);P(7,3,TART);P(8,3,SPRINK);
+  P(6,4,TART);P(7,4,SPRINK);P(8,4,TART);
+  P(6,5,PINK);P(7,5,PINK);P(8,5,PINK);  // tart bottom (darker pink)
+  // Legs (gray, animated)
+  const leg=((t/110)|0)%2;
+  if(leg===0){P(6,6,GRAY);P(8,6,GRAY);}else{P(7,6,GRAY);}
+  const h0=((t/15)|0)&255;let cx=bgX;
+  for(let i=0;i<s.length;i++){drawText(b,AW,s[i],cx,6,0,!last||old?S.stale:hsv(h0+i*35));cx+=textW(AW,s[i]);}
+  if(last)trendArrow(b,last,arrX,1,old);
+}},
 {name:"Custom title scroll",draw(b,t,st){
   const last=READINGS[READINGS.length-1],old=isOld();
   const title="Nightscout";
