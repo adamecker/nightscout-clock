@@ -232,6 +232,10 @@ void BGDisplayManager_::updateFaceCycle() {
     if (!faceCycleActive) {
         return;
     }
+    // Unicorn mode owns the face until the next reading arrives.
+    if (unicornModeActive) {
+        return;
+    }
 
     if (MATRIX_OFF) {
         faceCycleTimerStarted = false;
@@ -308,6 +312,10 @@ void BGDisplayManager_::configureFaceSchedule() {
 // at its time, even a single row. No known time means no row applies.
 void BGDisplayManager_::updateFaceSchedule() {
     if (!faceScheduleActive) {
+        return;
+    }
+    // Unicorn mode owns the face until the next reading arrives.
+    if (unicornModeActive) {
         return;
     }
 
