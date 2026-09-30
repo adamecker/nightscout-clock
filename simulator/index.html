@@ -352,24 +352,24 @@ const FACES=[
     for(let q=0;q<5;q++)px(b,x,yB+q,NY[q]);
     if(((x+wave)%5)===0)px(b,x,seg===0?7:0,C.WHITE);
   }
-  // Nyan Cat: gray cat with rainbow trail (no Pop-Tart)
+  // Nyan Cat: gray cat running right (head leads, body trails toward rainbow)
   const GRAY=rgb565(170,170,170),DKGRAY=rgb565(100,100,100),PNK=rgb565(255,150,200),
         PNKL=rgb565(255,105,180);
   const P=(dx,dy,c)=>{const X=ux+dx;if(X>=0&&X<32&&dy>=0&&dy<8)px(b,X,dy,c);};
-  // Cat head (gray with ears)
-  P(1,0,GRAY);P(5,0,GRAY);  // ear tips
-  P(1,1,GRAY);P(2,1,GRAY);P(4,1,GRAY);P(5,1,GRAY);  // ears + head top
-  P(1,2,GRAY);P(2,2,DKGRAY);P(3,2,GRAY);P(4,2,DKGRAY);P(5,2,GRAY);  // eyes (dark)
-  P(1,3,GRAY);P(2,3,PNK);P(3,3,GRAY);P(4,3,PNK);P(5,3,GRAY);  // cheeks (pink)
-  P(2,4,GRAY);P(3,4,DKGRAY);P(4,4,GRAY);  // mouth
-  // Cat body (gray, no Pop-Tart)
-  for(let bx=6;bx<=8;bx++){P(bx,2,GRAY);P(bx,3,GRAY);P(bx,4,GRAY);P(bx,5,GRAY);}
-  P(9,3,GRAY);P(9,4,GRAY);  // tail base
-  P(10,2,GRAY);  // tail tip (up)
+  // Tail (up, trailing left)
+  P(0,2,GRAY);P(0,3,GRAY);P(0,4,GRAY);
+  // Cat body (gray)
+  for(let bx=1;bx<=3;bx++){P(bx,2,GRAY);P(bx,3,GRAY);P(bx,4,GRAY);P(bx,5,GRAY);}
+  // Cat head (gray with ears, leading right)
+  P(5,0,GRAY);P(9,0,GRAY);  // ear tips
+  P(5,1,GRAY);P(6,1,GRAY);P(8,1,GRAY);P(9,1,GRAY);  // ears + head top
+  P(5,2,GRAY);P(6,2,DKGRAY);P(7,2,GRAY);P(8,2,DKGRAY);P(9,2,GRAY);  // eyes (dark)
+  P(5,3,GRAY);P(6,3,PNK);P(7,3,GRAY);P(8,3,PNK);P(9,3,GRAY);  // cheeks (pink)
+  P(6,4,GRAY);P(7,4,DKGRAY);P(8,4,GRAY);  // mouth
   // Legs (animated, like unicorn: gray with pink paws)
   const leg=((t/110)|0)%2;
-  if(leg===0){P(6,6,GRAY);P(6,7,PNKL);P(8,6,GRAY);P(8,7,PNKL);}
-  else{P(7,6,GRAY);P(7,7,PNKL);}
+  if(leg===0){P(1,6,GRAY);P(1,7,PNKL);P(3,6,GRAY);P(3,7,PNKL);}
+  else{P(2,6,GRAY);P(2,7,PNKL);}
   const h0=((t/15)|0)&255;let cx=bgX;
   for(let i=0;i<s.length;i++){drawText(b,AW,s[i],cx,6,0,!last||old?S.stale:hsv(h0+i*35));cx+=textW(AW,s[i]);}
   if(last)trendArrow(b,last,arrX,1,old);
