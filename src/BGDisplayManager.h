@@ -103,10 +103,13 @@ private:
     bool brightnessOverlayWasActive = false;
     // Unicorn mode: when enabled and a new reading is exactly 100, the Nyan
     // unicorn runs across once, then the static unicorn face stays until the
-    // next reading arrives.
+    // next reading arrives. That next reading makes the Nyan run away, then
+    // the face from before the celebration is restored.
     bool unicornModeActive = false;
     bool unicornNyanDone = false;
+    bool unicornExiting = false;
     unsigned long unicornNyanStartMs = 0;
+    int unicornReturnFaceIndex = -1;
     int nyanUnicornFaceIndex = -1;
     int unicornFaceIndex = -1;
 

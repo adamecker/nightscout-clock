@@ -232,8 +232,9 @@ void BGDisplayManager_::updateFaceCycle() {
     if (!faceCycleActive) {
         return;
     }
-    // Unicorn mode owns the face until the next reading arrives.
-    if (unicornModeActive) {
+    // Unicorn mode owns the face until the celebration (including the
+    // Nyan run-away) finishes and the previous face is restored.
+    if (unicornModeActive || unicornExiting) {
         return;
     }
 
@@ -257,13 +258,23 @@ void BGDisplayManager_::updateFaceCycle() {
 }
 
 void BGDisplayManager_::updateUnicornMode() {
-    if (!unicornModeActive || unicornNyanDone) return;
-    // Let the Nyan run across once (~3s) plus its pause, then switch to the static unicorn face.
-    if (millis() - unicornNyanStartMs >= 8000) {
+    if (!unicornModeActive && !unicornExiting) return;
+    // Let the Nyan run across once (~3s) plus its pause, then either hold the
+    // static unicorn face (entry) or restore the pre-celebration face (exit).
+    if (millis() - unicornNyanStartMs < 8000) return;
+    if (unicornExiting) {
+        if (unicornReturnFaceIndex >= 0) {
+            setFace(unicornReturnFaceIndex);
+        }
+        unicornExiting = false;
+        unicornModeActive = false;
+        unicornNyanDone = false;
+        unicornReturnFaceIndex = -1;
+    } else if (!unicornNyanDone) {
         if (unicornFaceIndex >= 0) {
             setFace(unicornFaceIndex);
-            unicornNyanDone = true;
         }
+        unicornNyanDone = true;
     }
 }
 
@@ -314,8 +325,9 @@ void BGDisplayManager_::updateFaceSchedule() {
     if (!faceScheduleActive) {
         return;
     }
-    // Unicorn mode owns the face until the next reading arrives.
-    if (unicornModeActive) {
+    // Unicorn mode owns the face until the celebration (including the
+    // Nyan run-away) finishes and the previous face is restored.
+    if (unicornModeActive || unicornExiting) {
         return;
     }
 
@@ -422,23 +434,49 @@ void BGDisplayManager_::showData(std::list<GlucoseReading> glucoseReadings) {
     if (glucoseReadings.size() == 0) {
         displayedReadings.clear();
         unicornModeActive = false;
+        unicornExiting = false;
+        unicornNyanDone = false;
+        if (unicornReturnFaceIndex >= 0) {
+            setFace(unicornReturnFaceIndex);
+            unicornReturnFaceIndex = -1;
+        }
         runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
         return;
     }
 
     displayedReadings = glucoseReadings;
 
-    // Unicorn mode: a new reading of exactly 100 triggers the Nyan run.
-    // Any other new reading ends the unicorn sequence.
+    // Unicorn mode: a new reading of exactly 100 starts the celebration --
+    // the Nyan runs across once, then the static unicorn holds. The next
+    // reading ends it: the Nyan runs away, then the face from before the
+    // celebration is restored.
     if (SettingsManager.settings.unicorn_mode && glucoseReadings.back().sgv == 100) {
         if (nyanUnicornFaceIndex >= 0) {
+            if (!unicornModeActive && !unicornExiting) {
+                unicornReturnFaceIndex = currentFaceIndex;
+            }
             unicornModeActive = true;
+            unicornExiting = false;
             unicornNyanDone = false;
             unicornNyanStartMs = millis();
             setFace(nyanUnicornFaceIndex);
         }
-    } else {
-        unicornModeActive = false;
+    } else if (unicornModeActive || unicornExiting) {
+        if (nyanUnicornFaceIndex >= 0) {
+            unicornExiting = true;
+            unicornModeActive = false;
+            unicornNyanDone = false;
+            unicornNyanStartMs = millis();
+            setFace(nyanUnicornFaceIndex);
+        } else {
+            unicornModeActive = false;
+            unicornExiting = false;
+            unicornNyanDone = false;
+            if (unicornReturnFaceIndex >= 0) {
+                setFace(unicornReturnFaceIndex);
+                unicornReturnFaceIndex = -1;
+            }
+        }
     }
 
     runRenderCycle(RenderReason::NEW_DATA, ServerManager.getTimezonedTime());
