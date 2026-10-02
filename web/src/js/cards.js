@@ -449,12 +449,6 @@ function unicornSettings() {
             moving ? field("face_unicorn_flow", "Motion", segmented("face_unicorn", MANE_FLOWS, { prop: "flow", label: "Motion" }),
                 "Top to bottom rolls the colors down the bands. Colors scroll back slides them from the head toward the tips. Light runs along the bands keeps each band's color and runs a light toward the tips.") : null)
     })
-
-function dragonSettings() {
-    return el("div.stack",
-        field("face_dragon_speed", "Speed", segmented("face_dragon", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
-            "The flame moves while the reading is fresh, and goes out when data is old."))
-}
 }
 
 function dragonSettings() {
