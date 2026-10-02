@@ -37,6 +37,74 @@ uint16_t BGDisplayFace::getBandColor(BG_LEVEL level) const {
     }
 }
 
+int BGDisplayFace::getWarningQuarter(int sgv, BG_LEVEL level) {
+    const auto& settings = SettingsManager.settings;
+    const bool low = level == BG_LEVEL::WARNING_LOW;
+    const int distance = low ? settings.bg_low_warn_limit - sgv : sgv - settings.bg_high_warn_limit;
+    const int width = low ? settings.bg_low_warn_limit - settings.bg_low_urgent_limit
+                          : settings.bg_high_urgent_limit - settings.bg_high_warn_limit;
+    return width > 0 ? std::min(3, std::max(0, 4 * distance / width)) : 1;
+}
+
+uint16_t BGDisplayFace::getMotionColor(
+    BG_LEVEL level, int quarter, int index, unsigned long frame) const {
+    const unsigned long position = index + frame;
+    const bool third = position % 3 == 0;
+    BG_LEVEL shown = level;
+    bool light = false;
+    if (level == BG_LEVEL::URGENT_LOW || level == BG_LEVEL::URGENT_HIGH) {
+        if (third) {
+            return 0;
+        }
+    } else if (level == BG_LEVEL::WARNING_LOW || level == BG_LEVEL::WARNING_HIGH) {
+        const BG_LEVEL urgent =
+            level == BG_LEVEL::WARNING_LOW ? BG_LEVEL::URGENT_LOW : BG_LEVEL::URGENT_HIGH;
+        if (quarter <= 1) {
+            light = third;
+        } else if (quarter == 2) {
+            shown = third ? urgent : level;
+        } else {
+            shown = position % 2 == 0 ? urgent : level;
+        }
+    }
+
+    const uint16_t color = getBandColor(shown);
+    if (!light) {
+        return color;
+    }
+    // The fleck is the band at 80%, so the motion shows without white; darker, yellow drifts toward
+    // green on the LEDs. Below an eighth of the brightness range that lights the same LEDs as the band,
+    // so only a lighter fleck still moves.
+    const int rich = MIN_BRIGHTNESS + (MAX_BRIGHTNESS - MIN_BRIGHTNESS) / 8;
+    if (DisplayManager.getBrightness() < rich) {
+        return lighten(color);
+    }
+    const uint16_t r = static_cast<uint16_t>(((color >> 11) & 0x1F) * 0.8f);
+    const uint16_t g = static_cast<uint16_t>(((color >> 5) & 0x3F) * 0.8f);
+    const uint16_t b = static_cast<uint16_t>((color & 0x1F) * 0.8f);
+    return (r << 11) | (g << 5) | b;
+}
+
+uint16_t BGDisplayFace::lighten(uint16_t color) {
+    const uint16_t r = (color >> 11) & 0x1F;
+    const uint16_t g = (color >> 5) & 0x3F;
+    const uint16_t b = color & 0x1F;
+    return ((r + 7 * 0x1F) / 8 << 11) | ((g + 7 * 0x3F) / 8 << 5) | ((b + 7 * 0x1F) / 8);
+}
+
+const uint16_t BGDisplayFace::IN_RANGE_COLORS[6] = {0xF81F, 0xE01F, 0xB19F, 0x781F, 0x401F, 0x1C9F};
+
+unsigned long BGDisplayFace::getStepMillis(ANIMATION_SPEED speed) {
+    switch (speed) {
+        case ANIMATION_SPEED::CALM:
+            return 180;
+        case ANIMATION_SPEED::LIVELY:
+            return 50;
+        default:
+            return 110;
+    }
+}
+
 RenderDecision BGDisplayFace::getRenderDecision(const RenderContext& ctx) const {
     if (ctx.reason == RenderReason::TIME_TICK) {
         if (ctx.dataIsOld != ctx.wasDataOld) {

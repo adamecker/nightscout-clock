@@ -146,6 +146,9 @@ const EARLY_STALE_MINUTES = [[6, "6 min"], [10, "10 min"], [15, "15 min"]]
 // colors stay on the trend arrow, so the number keeps whichever of these is chosen.
 const DARK_VALUE_COLORS = [["white", "White"], ["cyan", "Cyan"], ["blue", "Blue"], ["magenta", "Magenta"],
     ["gray", "Gray"], ["green", "Green"], ["yellow", "Yellow"], ["red", "Red"]]
+const MANE_MODES = [["still", "Still"], ["moving", "Moving"]]
+const MANE_FLOWS = [["down", "Top to bottom"], ["back", "Colors scroll back"], ["run", "Light runs along the bands"]]
+const ANIMATION_SPEEDS = [["calm", "Calm"], ["normal", "Normal"], ["lively", "Lively"]]
 const CYCLE_INTERVALS = [[10, "10 s"], [30, "30 s"], [60, "1 min"], [120, "2 min"], [180, "3 min"], [300, "5 min"]]
 const TIME_FORMATS = [["24", "24h"], ["12", "AM/PM"]]
 const SNOOZES = [[5, "5 minutes"], [10, "10 minutes"], [15, "15 minutes"], [30, "30 minutes"], [60, "1 hour"], [120, "2 hours"], [0, "Until next trigger"]]
@@ -404,7 +407,7 @@ function validateConfig(c, ctx) {
     }
     // A fresh number in the old data color would read as old data.
     const darkValueColor = (c.face_simple_dark || {}).value_color
-    if (active.includes(7) || active.includes(8)) {
+    if (active.includes(34) || active.includes(35)) {
         need("face_simple_dark_value_color", darkValueColor !== oldColor,
             `The dark faces' number color must differ from the old data color (${OLD_DATA_COLORS.find(([v]) => v === oldColor)[1]}), or a fresh reading would look old.`)
     }

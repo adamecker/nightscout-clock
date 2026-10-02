@@ -20,6 +20,13 @@ struct SimpleDarkFaceSettings {
     DISPLAY_COLOR value_color = DISPLAY_COLOR::WHITE;
 };
 
+// Unicorn face: a moving mane moves its colors at `speed` in the `flow` style while the reading is fresh.
+struct UnicornFaceSettings {
+    bool mane_moving = false;
+    ANIMATION_SPEED speed = ANIMATION_SPEED::NORMAL;
+    MANE_FLOW flow = MANE_FLOW::DOWN;
+};
+
 class Settings {
 public:
     String ssid;
@@ -89,6 +96,7 @@ public:
     int bg_data_too_old_threshold_minutes = 20;
     DISPLAY_COLOR data_old_color = DISPLAY_COLOR::GRAY;
     BigTextFaceSettings face_big_text;
+    UnicornFaceSettings face_unicorn;
     int alarm_high_volume;
     int alarm_low_volume;
     int alarm_urgent_low_volume;

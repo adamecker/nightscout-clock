@@ -44,7 +44,7 @@ struct GlucoseIntervals {
     // Method to add a GlucoseInterval to the array
     void addInterval(int low, int high, BG_LEVEL type) { intervals.push_back({low, high, type}); }
 
-    BG_LEVEL getBGLevel(int value) {
+    BG_LEVEL getBGLevel(int value) const {
         for (const GlucoseInterval& interval : intervals) {
             if (value >= interval.low_boundary && value <= interval.high_boundary) {
                 return interval.intarval_type;
@@ -96,6 +96,7 @@ private:
     bool faceCycleTimerStarted = false;
     unsigned long lastFaceCycleMillis = 0;
     std::vector<int> activeFaces;
+    unsigned long lastAnimationFrame = 0;
     std::vector<FaceScheduleEntry> faceSchedule;  // sorted by start time
     bool faceScheduleActive = false;
     int appliedScheduleEntry = -1;
@@ -115,6 +116,7 @@ private:
     int nyanUnicornFaceIndex = -1;
     int unicornFaceIndex = -1;
 
+    bool drawAnimationFrame(bool dataIsOld, bool redraw);
     void configureActiveFaces();
     void updateFaceCycle();
     void updateUnicornMode();
@@ -132,7 +134,7 @@ public:
     void maybeRrefreshScreen(bool force = false);
     void showData(std::list<GlucoseReading> glucoseReadings);
     GlucoseReading* getLastDisplayedGlucoseReading();
-    GlucoseIntervals getGlucoseIntervals();
+    const GlucoseIntervals& getGlucoseIntervals() const;
 
     std::map<int, String> getFaces();
     int getCurrentFaceId();

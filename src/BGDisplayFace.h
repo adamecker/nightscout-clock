@@ -46,6 +46,11 @@ public:
     virtual bool ticksEverySecond() const;
     // Suppress new alarms while this face is selected; existing alarms continue normally.
     virtual bool suppressesNewAlarms() const;
+    // How often a moving face redraws its moving part; 0 for a still face.
+    virtual unsigned long getAnimationStepMillis() const { return 0; }
+    // Redraws only the moving part of the face for animation step `frame`.
+    virtual void showAnimationFrame(
+        const std::list<GlucoseReading>& readings, unsigned long frame) const {}
 
 protected:
     // Configurable color for old readings and no-data screens;
@@ -53,6 +58,15 @@ protected:
     uint16_t getDataOldColor() const;
     // The configured color of a glucose range; gray for a reading outside every range.
     uint16_t getBandColor(BG_LEVEL level) const;
+    // Which quarter of the low or high range a reading is in: 0 next to in range, 3 next to urgent.
+    static int getWarningQuarter(int sgv, BG_LEVEL level);
+    // Seven eighths of the way to white: the lighter stripe of a moving part, lit at the lowest brightness.
+    static uint16_t lighten(uint16_t color);
+    // The Unicorn's in-range colors: magenta, orchid, purple, violet, indigo and blue.
+    static const uint16_t IN_RANGE_COLORS[6];
+    // The glucose color of pixel `index` of a moving part at step `frame`.
+    uint16_t getMotionColor(BG_LEVEL level, int quarter, int index, unsigned long frame) const;
+    static unsigned long getStepMillis(ANIMATION_SPEED speed);
 };
 
 #endif

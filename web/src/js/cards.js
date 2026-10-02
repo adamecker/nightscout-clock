@@ -365,7 +365,7 @@ function facesCard() {
 
 // Settings that belong to a face, by face id, shown in a drawer while that face is active. Faces sharing
 // settings share one drawer, titled with the active faces it covers.
-const FACE_DRAWERS = { 3: bigTextSettings, 34: darkFaceSettings, 35: darkFaceSettings }
+const FACE_DRAWERS = { 3: bigTextSettings, 15: unicornSettings, 34: darkFaceSettings, 35: darkFaceSettings }
 
 function faceDrawers() {
     return reactive(["inactive_faces"], () => {
@@ -437,6 +437,18 @@ function unicornModeCard() {
 function darkFaceSettings() {
     return field("face_simple_dark_value_color", "Number color", swatches("face_simple_dark", DARK_VALUE_COLORS, { prop: "value_color", label: "Number color", fallback: "white" }),
         "Both dark faces use it. The trend arrow keeps the glucose colors and old data still uses the old data color, so red, yellow and green here do not track the reading.")
+}
+
+function unicornSettings() {
+    return reactive(["face_unicorn"], () => {
+        const moving = (form.get("face_unicorn") || {}).mane === "moving"
+        return el("div.stack",
+            field("face_unicorn_mane", "Mane", segmented("face_unicorn", MANE_MODES, { prop: "mane", label: "Mane" }),
+                "A moving mane moves its colors while the reading is fresh, and stops in the old data color when data is old."),
+            moving ? field("face_unicorn_speed", "Speed", segmented("face_unicorn", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" })) : null,
+            moving ? field("face_unicorn_flow", "Motion", segmented("face_unicorn", MANE_FLOWS, { prop: "flow", label: "Motion" }),
+                "Top to bottom rolls the colors down the bands. Colors scroll back slides them from the head toward the tips. Light runs along the bands keeps each band's color and runs a light toward the tips.") : null)
+    })
 }
 
 /**

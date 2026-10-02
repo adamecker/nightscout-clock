@@ -402,6 +402,12 @@ bool SettingsManager_::loadSettingsFromFile() {
     settings.face_simple_dark.value_color = displayColorFromString(
         (*doc)["face_simple_dark"]["value_color"].as<String>(), DISPLAY_COLOR::WHITE);
 
+    // Unicorn face
+    JsonObject unicorn = (*doc)["face_unicorn"].as<JsonObject>();
+    settings.face_unicorn.mane_moving = unicorn["mane"].as<String>() == "moving";
+    settings.face_unicorn.speed = animationSpeedFromString(unicorn["speed"].as<String>());
+    settings.face_unicorn.flow = maneFlowFromString(unicorn["flow"].as<String>());
+
     // Web interface authentication
     settings.web_auth_enable = (*doc)["web_auth_enable"].as<bool>();
 
@@ -593,6 +599,12 @@ bool SettingsManager_::saveSettingsToFile() {
 
     // Simple (dark) face
     (*doc)["face_simple_dark"]["value_color"] = toString(settings.face_simple_dark.value_color);
+
+    // Unicorn face
+    JsonObject unicorn = (*doc)["face_unicorn"].to<JsonObject>();
+    unicorn["mane"] = settings.face_unicorn.mane_moving ? "moving" : "still";
+    unicorn["speed"] = toString(settings.face_unicorn.speed);
+    unicorn["flow"] = toString(settings.face_unicorn.flow);
 
     // Web interface authentication
     (*doc)["web_auth_enable"] = settings.web_auth_enable;
