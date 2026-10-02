@@ -31,7 +31,6 @@
 
 // How many clock faces BGDisplayManager registers. Face ids are validated against this both in
 // the settings API and when loading a config, so this must be updated when a face is added.
-<<<<<<< HEAD
 // Total registered clock faces: 6 stock + 8 custom + Unicorn + Time only (upstream).
 // Keep in sync with BGDisplayManager_::setup().
 #define CLOCK_FACE_COUNT 35
@@ -56,10 +55,6 @@
 #define COLOR_BLUE static_cast<uint16_t>(DISPLAY_COLOR::BLUE)
 #define COLOR_CYAN static_cast<uint16_t>(DISPLAY_COLOR::CYAN)
 #define COLOR_MAGENTA static_cast<uint16_t>(DISPLAY_COLOR::MAGENTA)
-
-#define BG_COLOR_NORMAL COLOR_GREEN
-#define BG_COLOR_WARNING COLOR_YELLOW
-#define BG_COLOR_URGENT COLOR_RED
 
 extern bool BLOCK_NAVIGATION;
 extern float TEMP_OFFSET;

@@ -9,12 +9,12 @@ constexpr int BATTERY_DOT_COUNT = 10;
 
 uint16_t getBatteryColor() {
     if (BATTERY_PERCENT < 10) {
-        return BG_COLOR_URGENT;
+        return COLOR_RED;
     }
     if (BATTERY_PERCENT < 30) {
-        return BG_COLOR_WARNING;
+        return COLOR_YELLOW;
     }
-    return BG_COLOR_NORMAL;
+    return COLOR_GREEN;
 }
 }  // namespace
 

@@ -33,7 +33,14 @@ public:
     int bg_high_warn_limit;
     int bg_low_urgent_limit;
     int bg_high_urgent_limit;
-    BRIGHTNES_MODE brightness_mode;    int brightness_level;    int default_clockface;
+    DISPLAY_COLOR bg_color_urgent_low = DISPLAY_COLOR::RED;
+    DISPLAY_COLOR bg_color_low = DISPLAY_COLOR::YELLOW;
+    DISPLAY_COLOR bg_color_normal = DISPLAY_COLOR::GREEN;
+    DISPLAY_COLOR bg_color_high = DISPLAY_COLOR::YELLOW;
+    DISPLAY_COLOR bg_color_urgent_high = DISPLAY_COLOR::RED;
+    BRIGHTNES_MODE brightness_mode;
+    int brightness_level;
+    int default_clockface;
     bool face_cycle_enabled = false;
     std::vector<int> inactive_faces;
     int face_cycle_interval_seconds = 60;

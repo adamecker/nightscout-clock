@@ -17,7 +17,6 @@
 #include "BGDisplayFaceGraph.h"
 #include "BGDisplayFaceGraphAndBG.h"
 #include "BGDisplayFaceSimple.h"
-<<<<<<< HEAD
 #include "BGDisplayFaceSmiley.h"
 #include "BGDisplayFaceRainbowSparkle.h"
 #include "BGDisplayFaceRainbowClock.h"
@@ -26,9 +25,7 @@
 #include "BGDisplayFaceNyanCat.h"
 #include "BGDisplayFaceTitleScroll.h"
 #include "BGDisplayFaceTimeOnly.h"
-=======
 #include "BGDisplayFaceSimpleDark.h"
->>>>>>> pr-upstream-191
 #include "BGDisplayFaceUnicorn.h"
 #include "BGDisplayFaceValueAndDiff.h"
 #include "BGSource.h"
