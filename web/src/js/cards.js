@@ -365,7 +365,7 @@ function facesCard() {
 
 // Settings that belong to a face, by face id, shown in a drawer while that face is active. Faces sharing
 // settings share one drawer, titled with the active faces it covers.
-const FACE_DRAWERS = { 3: bigTextSettings, 15: unicornSettings, 34: darkFaceSettings, 35: darkFaceSettings }
+const FACE_DRAWERS = { 3: bigTextSettings, 15: unicornSettings, 34: darkFaceSettings, 35: darkFaceSettings, 36: dragonSettings }
 
 function faceDrawers() {
     return reactive(["inactive_faces"], () => {
@@ -449,6 +449,18 @@ function unicornSettings() {
             moving ? field("face_unicorn_flow", "Motion", segmented("face_unicorn", MANE_FLOWS, { prop: "flow", label: "Motion" }),
                 "Top to bottom rolls the colors down the bands. Colors scroll back slides them from the head toward the tips. Light runs along the bands keeps each band's color and runs a light toward the tips.") : null)
     })
+
+function dragonSettings() {
+    return el("div.stack",
+        field("face_dragon_speed", "Speed", segmented("face_dragon", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
+            "The flame moves while the reading is fresh, and goes out when data is old."))
+}
+}
+
+function dragonSettings() {
+    return el("div.stack",
+        field("face_dragon_speed", "Speed", segmented("face_dragon", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
+            "The flame moves while the reading is fresh, and goes out when data is old."))
 }
 
 /**

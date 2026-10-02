@@ -46,6 +46,11 @@ public:
     DISPLAY_COLOR bg_color_high = DISPLAY_COLOR::YELLOW;
     DISPLAY_COLOR bg_color_urgent_high = DISPLAY_COLOR::RED;
     BRIGHTNES_MODE brightness_mode;
+
+// Dragon face: the flame moves at `speed` while the reading is fresh.
+struct DragonFaceSettings {
+    ANIMATION_SPEED speed = ANIMATION_SPEED::NORMAL;
+};
     int brightness_level;
     int default_clockface;
     bool face_cycle_enabled = false;
@@ -101,6 +106,7 @@ public:
     int alarm_low_volume;
     int alarm_urgent_low_volume;
     SimpleDarkFaceSettings face_simple_dark;
+    DragonFaceSettings face_dragon;
     bool alarm_intensive_mode;
     int alarm_repeat_interval_seconds = 300;
     bool web_auth_enable;
