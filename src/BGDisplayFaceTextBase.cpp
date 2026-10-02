@@ -8,13 +8,19 @@
 void BGDisplayFaceTextBase::showReading(
     const GlucoseReading reading, int16_t x, int16_t y, TEXT_ALIGNMENT alignment, FONT_TYPE font,
     bool isOld, bool updateMatrix) const {
-    String readingToDisplay = getPrintableReading(reading.sgv);
     if (!isOld) {
         SetDisplayColorByBGValue(reading);
     } else {
         DisplayManager.setTextColor(getDataOldColor());
     }
 
+    printReading(reading, x, y, alignment, font, updateMatrix);
+}
+
+void BGDisplayFaceTextBase::printReading(
+    const GlucoseReading& reading, int16_t x, int16_t y, TEXT_ALIGNMENT alignment,
+    FONT_TYPE font, bool updateMatrix) const {
+    String readingToDisplay = getPrintableReading(reading.sgv);
     DisplayManager.setFont(font);
 
     DisplayManager.printText(x, y, readingToDisplay.c_str(), alignment, 2, updateMatrix);
@@ -213,8 +219,7 @@ void BGDisplayFaceTextBase::showTrendVerticalLine(int x, BG_TREND trend, bool da
         case BG_TREND::FLAT:
             DisplayManager.drawPixel(x, 3, COLOR_WHITE);
             DisplayManager.drawPixel(x, 4, COLOR_WHITE);
-            break;
-        default:
+            break;        default:
             DisplayManager.setTextColor(COLOR_BLACK);
             break;
     }
