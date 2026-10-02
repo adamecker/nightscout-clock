@@ -20,6 +20,8 @@ protected:
     void SetDisplayColorByBGValue(const GlucoseReading& reading) const;
     uint16_t getDisplayColorByBGValue(const GlucoseReading& reading) const;
     String getPrintableReading(const int sgv) const;
+    int toDisplayTenths(const int sgv) const;
+    String formatDisplayTenths(const int tenths) const;
 };
 
 #endif  // BGDISPLAYFACETEXTBASE_H

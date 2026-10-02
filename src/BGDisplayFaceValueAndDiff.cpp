@@ -90,12 +90,21 @@ String BGDisplayFaceValueAndDiff::getDiff(const std::list<GlucoseReading>& readi
         return "?";
     }
 
+    // Render the delta from the *displayed* value of each endpoint, rather than
+    // converting the raw mg/dL diff directly. Two readings that differ in mg/dL can
+    // still round to the same displayed mmol/L value (e.g. 193 and 192 mg/dL both show
+    // as "10.7"): converting the raw diff directly would then print a false -0.1/+0.1
+    // delta even though nothing changed on screen. Diffing the two rounded display
+    // values instead guarantees the delta always matches what the user can see.
+    int otherSGV = minSGV == base ? maxSGV : minSGV;
+    int diffDisplayTenths = toDisplayTenths(base) - toDisplayTenths(otherSGV);
+
     String diffString = "";
-    if (diff >= 0) {
+    if (diffDisplayTenths >= 0) {
         diffString += "+";
     }
 
-    diffString += getPrintableReading(diff);
+    diffString += formatDisplayTenths(diffDisplayTenths);
 
 #ifdef DEBUG_DISPLAY
     DEBUG_PRINTF("SGV Diff: %s (%d readings)", diffString.c_str(), foundReadings.size());
