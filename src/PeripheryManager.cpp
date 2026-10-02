@@ -285,3 +285,10 @@ const void PeripheryManager_::playRTTTLString(String rtttl) {
     Melody melody = MelodyFactory.loadRtttlString(rtttl.c_str());
     player.playAsync(melody);
 }
+
+const void PeripheryManager_::playRTTTLString(String rtttl, byte volume) {
+    Melody melody = MelodyFactory.loadRtttlString(rtttl.c_str());
+    // Volume is per alert, so set it on every play.
+    player.setVolume(volume);
+    player.playAsync(melody);
+}

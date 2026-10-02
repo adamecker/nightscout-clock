@@ -78,6 +78,9 @@ public:
     int bg_data_too_old_threshold_minutes = 20;
     DISPLAY_COLOR data_old_color = DISPLAY_COLOR::GRAY;
     BigTextFaceSettings face_big_text;
+    int alarm_high_volume;
+    int alarm_low_volume;
+    int alarm_urgent_low_volume;
     bool alarm_intensive_mode;
     int alarm_repeat_interval_seconds = 300;
     bool web_auth_enable;
