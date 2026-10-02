@@ -31,9 +31,10 @@
 
 // How many clock faces BGDisplayManager registers. Face ids are validated against this both in
 // the settings API and when loading a config, so this must be updated when a face is added.
+<<<<<<< HEAD
 // Total registered clock faces: 6 stock + 8 custom + Unicorn + Time only (upstream).
 // Keep in sync with BGDisplayManager_::setup().
-#define CLOCK_FACE_COUNT 34
+#define CLOCK_FACE_COUNT 35
 #define CONFIG_JSON "/config.json"
 #define CONFIG_JSON_BAK "/config.bak"
 #define CONFIG_JSON_FACTORY "/config_initial.json"

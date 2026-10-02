@@ -13,6 +13,10 @@ protected:
     void showTrendArrow(
         const GlucoseReading reading, int16_t x, int16_t y, bool dataIsOld,
         bool colorByReading = false, bool updateMatrix = true) const;
+    // Draws the arrow in freshColor, or in the old-data color once the data is old.
+    void showTrendArrow(
+        const GlucoseReading reading, int16_t x, int16_t y, bool dataIsOld,
+        uint16_t freshColor, bool updateMatrix = true) const;
     void showTrendVerticalLine(int x, BG_TREND trend, bool dataIsOld) const;
     void showReading(
         const GlucoseReading reading, int16_t x, int16_t y, TEXT_ALIGNMENT alignment, FONT_TYPE fontType,
@@ -23,6 +27,7 @@ protected:
         FONT_TYPE font, bool updateMatrix = true) const;
     void SetDisplayColorByBGValue(const GlucoseReading& reading) const;
     uint16_t getDisplayColorByBGValue(const GlucoseReading& reading) const;
+    uint16_t getColorByBGValue(const GlucoseReading& reading) const;
     String getPrintableReading(const int sgv) const;
     int toDisplayTenths(const int sgv) const;
     String formatDisplayTenths(const int tenths) const;

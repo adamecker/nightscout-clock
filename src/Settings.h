@@ -15,6 +15,11 @@ struct BigTextFaceSettings {
     int early_stale_minutes = 6;
 };
 
+// Simple (dark) face: the color of the number while the reading is fresh.
+struct SimpleDarkFaceSettings {
+    DISPLAY_COLOR value_color = DISPLAY_COLOR::WHITE;
+};
+
 class Settings {
 public:
     String ssid;
@@ -28,8 +33,7 @@ public:
     int bg_high_warn_limit;
     int bg_low_urgent_limit;
     int bg_high_urgent_limit;
-    BRIGHTNES_MODE brightness_mode;    int brightness_level;
-    int default_clockface;
+    BRIGHTNES_MODE brightness_mode;    int brightness_level;    int default_clockface;
     bool face_cycle_enabled = false;
     std::vector<int> inactive_faces;
     int face_cycle_interval_seconds = 60;
@@ -81,6 +85,7 @@ public:
     int alarm_high_volume;
     int alarm_low_volume;
     int alarm_urgent_low_volume;
+    SimpleDarkFaceSettings face_simple_dark;
     bool alarm_intensive_mode;
     int alarm_repeat_interval_seconds = 300;
     bool web_auth_enable;

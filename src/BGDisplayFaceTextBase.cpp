@@ -51,6 +51,10 @@ uint16_t BGDisplayFaceTextBase::getDisplayColorByBGValue(const GlucoseReading& r
     return textColor;
 }
 
+uint16_t BGDisplayFaceTextBase::getColorByBGValue(const GlucoseReading& reading) const {
+    return getDisplayColorByBGValue(reading);
+}
+
 String BGDisplayFaceTextBase::getPrintableReading(const int sgv) const {
     return formatDisplayTenths(toDisplayTenths(sgv));
 }
@@ -177,6 +181,16 @@ void BGDisplayFaceTextBase::showTrendArrow(
 
     const uint16_t color = colorByReading ? getDisplayColorByBGValue(reading) : COLOR_WHITE;
     DisplayManager.drawBitmap(x, y, glucoseTrendSymbols.at(reading.trend), 5, 5, color, updateMatrix);
+}
+void BGDisplayFaceTextBase::showTrendArrow(
+    const GlucoseReading reading, int16_t x, int16_t y, bool dataIsOld,
+    uint16_t freshColor, bool updateMatrix) const {
+    if (dataIsOld) {
+        DisplayManager.drawBitmap(x, y, symbol_dataOld, 5, 5, getDataOldColor(), updateMatrix);
+        return;
+    }
+
+    DisplayManager.drawBitmap(x, y, glucoseTrendSymbols.at(reading.trend), 5, 5, freshColor, updateMatrix);
 }
 
 #pragma endregion Show arrow
