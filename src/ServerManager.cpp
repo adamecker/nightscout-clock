@@ -1023,6 +1023,7 @@ void ServerManager_::setupWebServer(IPAddress ip) {
                 }
                 macPrefs.end();
                 data.remove("custom_mac");
+            }
 // A schedule row names a face too, and readFaceSchedule drops one it cannot apply with only
             // a debug line, so a row nobody rendered would be stored and then quietly never run.
             if (!data["face_schedule"].isUnbound()) {
