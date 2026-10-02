@@ -363,15 +363,18 @@ function facesCard() {
         cyclingToggle, interval), { id: "card_faces" })
 }
 
-// Settings that belong to one face, by face id, shown in a drawer while that face is active.
-const FACE_DRAWERS = { 3: bigTextSettings, 34: simpleDarkSettings }
+// Settings that belong to a face, by face id, shown in a drawer while that face is active. Faces sharing
+// settings share one drawer, titled with the active faces it covers.
+const FACE_DRAWERS = { 3: bigTextSettings, 34: darkFaceSettings, 35: darkFaceSettings }
 
 function faceDrawers() {
     return reactive(["inactive_faces"], () => {
         const active = activeFaceIds(form.get("inactive_faces"))
         const faces = FACES.filter(f => FACE_DRAWERS[f.id] && active.includes(f.id))
         if (!faces.length) return el("span", { hidden: true })
-        return el("div.stack", el("hr.divider"), ...faces.map(f => drawer(f.name, FACE_DRAWERS[f.id]())))
+        const builds = [...new Set(faces.map(f => FACE_DRAWERS[f.id]))]
+        return el("div.stack", el("hr.divider"), ...builds.map(build =>
+            drawer(faces.filter(f => FACE_DRAWERS[f.id] === build).map(f => f.name).join(" and "), build())))
     })
 }
 
@@ -431,9 +434,9 @@ function unicornModeCard() {
     return card("Unicorn mode", null, el("div.stack", toggle), { id: "card_unicorn" })
 }
 
-function simpleDarkSettings() {
+function darkFaceSettings() {
     return field("face_simple_dark_value_color", "Number color", swatches("face_simple_dark", DARK_VALUE_COLORS, { prop: "value_color", label: "Number color", fallback: "white" }),
-        "The trend arrow keeps the glucose colors and old data still uses the old data color, so red, yellow and green here do not track the reading.")
+        "Both dark faces use it. The trend arrow keeps the glucose colors and old data still uses the old data color, so red, yellow and green here do not track the reading.")
 }
 
 /**

@@ -108,6 +108,8 @@ void BGDisplayManager_::setup() {
     facesNames[33] = "Butterfly";
     faces.push_back(new BGDisplayFaceSimpleDark());
     facesNames[34] = "Simple (dark)";
+    faces.push_back(new BGDisplayFaceBigTextDark());
+    facesNames[35] = "Big text (dark)";
     if (faces.size() != CLOCK_FACE_COUNT) {
         DEBUG_PRINTF(
             "Face count mismatch: %u registered, CLOCK_FACE_COUNT is %d",

@@ -12,6 +12,7 @@
 #include "BGDisplayFaceBigText.h"
 #include "BGDisplayFaceBigTextWithAge.h"
 #include "BGDisplayFaceBigTextRainbow.h"
+#include "BGDisplayFaceBigTextDark.h"
 #include "BGDisplayFaceClock.h"
 #include "BGDisplayFaceDiagnostics.h"
 #include "BGDisplayFaceGraph.h"
