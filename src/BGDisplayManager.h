@@ -18,6 +18,7 @@
 #include "BGDisplayFaceDragon.h"
 #include "BGDisplayFaceGraph.h"
 #include "BGDisplayFaceGraphAndBG.h"
+#include "BGDisplayFaceRaceCar.h"
 #include "BGDisplayFaceSimple.h"
 #include "BGDisplayFaceSmiley.h"
 #include "BGDisplayFaceRainbowSparkle.h"

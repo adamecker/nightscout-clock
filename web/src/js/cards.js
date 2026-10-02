@@ -365,7 +365,7 @@ function facesCard() {
 
 // Settings that belong to a face, by face id, shown in a drawer while that face is active. Faces sharing
 // settings share one drawer, titled with the active faces it covers.
-const FACE_DRAWERS = { 3: bigTextSettings, 15: unicornSettings, 34: darkFaceSettings, 35: darkFaceSettings, 36: dragonSettings }
+const FACE_DRAWERS = { 3: bigTextSettings, 15: unicornSettings, 34: darkFaceSettings, 35: darkFaceSettings, 36: dragonSettings, 37: raceCarSettings }
 
 function faceDrawers() {
     return reactive(["inactive_faces"], () => {
@@ -1391,4 +1391,10 @@ function showTab(name) {
     for (const n of Object.keys(TABS)) $(`#tab_${n}`).hidden = n !== name
     $$("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)))
     try { sessionStorage.setItem("tab", name) } catch (e) { /* private mode */ }
+}
+
+function raceCarSettings() {
+    return el("div.stack",
+        field("face_race_car_speed", "Speed", segmented("face_race_car", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
+            "The speed lines show the glucose color while the reading is fresh, and the race stops in the old data color when data is old."))
 }

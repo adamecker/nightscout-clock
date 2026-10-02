@@ -412,6 +412,10 @@ bool SettingsManager_::loadSettingsFromFile() {
     JsonObject dragon = (*doc)["face_dragon"].as<JsonObject>();
     settings.face_dragon.speed = animationSpeedFromString(dragon["speed"].as<String>());
 
+    // Race car face
+    JsonObject raceCar = (*doc)["face_race_car"].as<JsonObject>();
+    settings.face_race_car.speed = animationSpeedFromString(raceCar["speed"].as<String>());
+
     // Web interface authentication
     settings.web_auth_enable = (*doc)["web_auth_enable"].as<bool>();
 
@@ -613,6 +617,10 @@ bool SettingsManager_::saveSettingsToFile() {
     // Dragon face
     JsonObject dragon = (*doc)["face_dragon"].to<JsonObject>();
     dragon["speed"] = toString(settings.face_dragon.speed);
+
+    // Race car face
+    JsonObject raceCar = (*doc)["face_race_car"].to<JsonObject>();
+    raceCar["speed"] = toString(settings.face_race_car.speed);
 
     // Web interface authentication
     (*doc)["web_auth_enable"] = settings.web_auth_enable;

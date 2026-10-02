@@ -51,6 +51,11 @@ public:
 struct DragonFaceSettings {
     ANIMATION_SPEED speed = ANIMATION_SPEED::NORMAL;
 };
+
+// Race car face: the race moves at `speed` while the reading is fresh.
+struct RaceCarFaceSettings {
+    ANIMATION_SPEED speed = ANIMATION_SPEED::NORMAL;
+};
     int brightness_level;
     int default_clockface;
     bool face_cycle_enabled = false;
@@ -107,6 +112,7 @@ struct DragonFaceSettings {
     int alarm_urgent_low_volume;
     SimpleDarkFaceSettings face_simple_dark;
     DragonFaceSettings face_dragon;
+    RaceCarFaceSettings face_race_car;
     bool alarm_intensive_mode;
     int alarm_repeat_interval_seconds = 300;
     bool web_auth_enable;
