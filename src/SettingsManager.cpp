@@ -146,6 +146,28 @@ bool SettingsManager_::isValidAlarmRepeatInterval(int intervalSeconds) {
     return intervalSeconds == 60 || intervalSeconds == 120 || intervalSeconds == 300;
 }
 
+bool SettingsManager_::parseCustomMac(const String& macStr, uint8_t* macBytes) {
+    int values[6];
+    int parsed = sscanf(macStr.c_str(), "%x:%x:%x:%x:%x:%x",
+                        &values[0], &values[1], &values[2],
+                        &values[3], &values[4], &values[5]);
+    if (parsed != 6) {
+        parsed = sscanf(macStr.c_str(), "%x-%x-%x-%x-%x-%x",
+                        &values[0], &values[1], &values[2],
+                        &values[3], &values[4], &values[5]);
+    }
+    if (parsed != 6) {
+        return false;
+    }
+    for (int i = 0; i < 6; i++) {
+        if (values[i] < 0 || values[i] > 255) {
+            return false;
+        }
+        macBytes[i] = (uint8_t)values[i];
+    }
+    return true;
+}
+
 // The three levels the WebUI offers; anything else falls back to the default.
 static int readAlarmVolume(JsonVariantConst configured) {
     int volume = configured | DEFAULT_ALARM_VOLUME;
@@ -191,6 +213,23 @@ bool SettingsManager_::loadSettingsFromFile() {
     }
 
     settings.ssid = (*doc)["ssid"].as<String>();
+    settings.custom_mac = (*doc)["custom_mac"] | "";
+    if (settings.custom_mac.length() == 0) {
+        // One-time migration from the pre-1.8.x NVS storage.
+        Preferences migratePrefs;
+        migratePrefs.begin("custom_net", true);
+        String nvsMac = migratePrefs.getString("mac", "");
+        migratePrefs.end();
+        nvsMac.trim();
+        if (nvsMac.length() > 0) {
+            uint8_t macBytes[6];
+            if (parseCustomMac(nvsMac, macBytes)) {
+                settings.custom_mac = nvsMac;
+                saveSettingsToFile();
+                DEBUG_PRINTLN("Migrated custom MAC from NVS to config.json");
+            }
+        }
+    }
     settings.wifi_password = (*doc)["password"].as<String>();
 
     if (settings.ssid.length() > 0) {
@@ -465,6 +504,7 @@ bool SettingsManager_::saveSettingsToFile() {
         return false;
 
     (*doc)["ssid"] = settings.ssid;
+    (*doc)["custom_mac"] = settings.custom_mac;
     (*doc)["password"] = settings.wifi_password;
 
     (*doc)["low_mgdl"] = settings.bg_low_warn_limit;
