@@ -14,7 +14,7 @@
 >
 > You can reach me at **artiom@gmail.com**.
 
-### Current version: 1.8.2
+### Current version: 1.9.0
 
 ![Build and Release](https://github.com/ktomy/nightscout-clock/actions/workflows/build_release.yml/badge.svg)
 
@@ -234,6 +234,11 @@ High, low, and urgent-low alarms each have their own threshold, snooze duration,
   - ...more... (if you are the author of a CGM data collecting app/service and you want your data to be displayed on the Nightscout Clock, please contact me)
 
 ## Changes
+
+### 1.9.0
+
+- Removed the school mode feature: the triple-click middle-button gesture, face allow-list, settings, web UI card, and status heartbeat field are gone. Triple-click is now unassigned.
+- Merged upstream v1.0.0: Race car and Dragon animated faces, Simple (dark) and Big text (dark) faces, configurable glucose range colors, editable clock names, early-stale color option for Big text, and client-side settings validation. The fork keeps its 38 faces, OTA self-update, status heartbeat, unicorn mode, and critter faces.
 
 ### 1.5.1
 
