@@ -76,6 +76,9 @@ function renderStatus(s) {
         if (src === "backup") {
             warn.hidden = false
             warn.textContent = "The clock's main settings file was unreadable at boot, so it restored the backup copy. Check that your settings look right."
+        } else if (src === "nvs") {
+            warn.hidden = false
+            warn.textContent = "The clock's settings files were unreadable at boot, so it restored them from the internal backup. Check that your settings look right."
         } else if (src === "factory" || src === "unreadable") {
             warn.hidden = false
             warn.textContent = "The clock could not read its saved settings at boot and fell back to defaults (Wi-Fi was recovered). Please review and re-save your settings."

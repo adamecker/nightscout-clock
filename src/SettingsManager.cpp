@@ -45,6 +45,11 @@ void SettingsManager_::setup() {
     }
 }
 
+// Forward declarations: NVS snapshot helpers (defined below, used by
+// readConfigJsonFile).
+static bool snapshotConfigToNVS();
+static String readConfigSnapshotFromNVS();
+
 bool copyFile(const char* srcPath, const char* destPath) {
     File srcFile = LittleFS.open(srcPath, "r");
     if (!srcFile) {
@@ -138,8 +143,24 @@ JsonDocument* SettingsManager_::readConfigJsonFile() {
         return doc;
     }
 
-    // 3. Fallback: Only copy factory default if both primary and backup failed
-    DEBUG_PRINTLN("Both primary and backup failed. Falling back to factory template...");
+    // 3. NVS snapshot: survives LittleFS-level corruption. Restore it to
+    // primary + backup so the next boot is normal.
+    DEBUG_PRINTLN("Primary and backup failed, trying NVS snapshot...");
+    String nvsConfig = readConfigSnapshotFromNVS();
+    if (nvsConfig.length() > 0) {
+        File f = LittleFS.open(CONFIG_JSON, "w");
+        if (f) {
+            f.print(nvsConfig);
+            f.close();
+            copyFile(CONFIG_JSON, CONFIG_JSON_BAK);
+            DEBUG_PRINTLN("Restored config from NVS snapshot");
+            configLoadSource = "nvs";
+            return safeReadJsonFile(CONFIG_JSON);
+        }
+    }
+
+    // 4. Fallback: Only copy factory default if everything else failed
+    DEBUG_PRINTLN("NVS snapshot missing or invalid. Falling back to factory template...");
     copyFile(CONFIG_JSON_FACTORY, CONFIG_JSON);
     doc = safeReadJsonFile(CONFIG_JSON);
     configLoadSource = (doc != NULL) ? "factory" : "unreadable";
@@ -684,6 +705,85 @@ bool SettingsManager_::saveSettingsToFile() {
     return true;
 }
 
+// NVS snapshot of the whole config.json, chunked because a single NVS string
+// value maxes out around 4KB. Written after every successful settings save;
+// read only when both LittleFS copies are unreadable, so it survives
+// LittleFS-level corruption. The chunk count is written last as a commit
+// marker, and the content is JSON-validated on restore.
+static const char* NVS_CONFIG_BACKUP_NS = "config_bak";
+static const int NVS_CONFIG_CHUNK = 3800;
+static const int NVS_CONFIG_MAX_CHUNKS = 8;
+
+static bool snapshotConfigToNVS() {
+    File f = LittleFS.open(CONFIG_JSON, "r");
+    if (!f) {
+        return false;
+    }
+    String content = f.readString();
+    f.close();
+    if (content.length() == 0) {
+        return false;
+    }
+    // Never back up a corrupt primary.
+    JsonDocument probe;
+    if (deserializeJson(probe, content)) {
+        return false;
+    }
+
+    Preferences prefs;
+    if (!prefs.begin(NVS_CONFIG_BACKUP_NS, false)) {
+        return false;
+    }
+    int oldChunks = prefs.getInt("chunks", 0);
+    int chunks = (content.length() + NVS_CONFIG_CHUNK - 1) / NVS_CONFIG_CHUNK;
+    if (chunks > NVS_CONFIG_MAX_CHUNKS) {
+        prefs.end();
+        return false;
+    }
+    bool ok = true;
+    for (int i = 0; i < chunks && ok; i++) {
+        String part = content.substring(i * NVS_CONFIG_CHUNK, (i + 1) * NVS_CONFIG_CHUNK);
+        ok = prefs.putString(("c" + String(i)).c_str(), part);
+    }
+    if (ok) {
+        ok = prefs.putInt("chunks", chunks);
+    }
+    // Drop stale chunks from a larger previous snapshot.
+    for (int i = chunks; i < oldChunks; i++) {
+        prefs.remove(("c" + String(i)).c_str());
+    }
+    prefs.end();
+    return ok;
+}
+
+static String readConfigSnapshotFromNVS() {
+    Preferences prefs;
+    if (!prefs.begin(NVS_CONFIG_BACKUP_NS, true)) {
+        return "";
+    }
+    int chunks = prefs.getInt("chunks", 0);
+    String content;
+    if (chunks > 0 && chunks <= NVS_CONFIG_MAX_CHUNKS) {
+        for (int i = 0; i < chunks; i++) {
+            String part = prefs.getString(("c" + String(i)).c_str(), "");
+            if (part.length() == 0) {
+                content = "";
+                break;
+            }
+            content += part;
+        }
+    }
+    prefs.end();
+    if (content.length() == 0) {
+        return "";
+    }
+    JsonDocument probe;
+    if (deserializeJson(probe, content)) {
+        return "";
+    }
+    return content;
+}
+
 bool SettingsManager_::trySaveJsonAsSettings(JsonDocument doc) {
     DEBUG_PRINTLN(doc.as<String>());
     auto file = LittleFS.open(CONFIG_JSON, FILE_WRITE);
@@ -718,5 +818,8 @@ bool SettingsManager_::trySaveJsonAsSettings(JsonDocument doc) {
         netPrefs.end();
     }
 
+    // Best-effort tertiary backup: a corrupt LittleFS can't hurt us
+    // if a known-good snapshot lives in NVS.
+    snapshotConfigToNVS();
     return true;
 }
