@@ -270,7 +270,7 @@ function toast(message, kind = "ok", ms = 4500) {
  * @returns {HTMLElement}
  */
 function displayTab() {
-    return el("div.stack", facesCard(), faceSwitchCard(), schoolModeCard(), unicornModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
+    return el("div.stack", facesCard(), faceSwitchCard(), unicornModeCard(), faceScheduleCard(), brightnessCard(), oldDataCard(), timeCard())
 }
 
 /**
@@ -403,27 +403,6 @@ function bigTextSettings() {
             "Color late readings until the old-data threshold. Off keeps the usual glucose colors."),
         field("face_big_text_early_stale_minutes", "Late after", segmented("face_big_text", EARLY_STALE_MINUTES, { numeric: true, prop: "early_stale_minutes", label: "Late after" })))
 }
-
-/** School-mode toggle plus the faces the clock may show while it is active. */
-function schoolModeCard() {
-    const toggle = toggleRow("school_mode_active", "School mode",
-        "Triple-tap the clock's middle button to toggle it.")
-    const faces = reactive(["school_mode_faces"], () => {
-        const allowed = form.get("school_mode_faces") || []
-        const list = el("div.faces")
-        for (const f of FACES) {
-            const b = el("button.face", { type: "button", "aria-pressed": String(allowed.includes(f.id)) })
-            b.textContent = f.name
-            b.onclick = () => {
-                form.set("school_mode_faces", allowed.includes(f.id)
-                    ? allowed.filter(x => x !== f.id) : [...allowed, f.id])
-                form.touch("school_mode_faces")
-            }
-            list.append(b)
-        }
-        return el("div.field", { dataset: { field: "school_mode_faces" } }, list, el("p.err", { hidden: true }))
-    })
-    return card("School mode", null, el("div.stack", toggle, faces), { id: "card_school" })
 }
 
 /** Unicorn-mode toggle: when on and BG hits exactly 100, the Nyan unicorn
@@ -1317,10 +1296,10 @@ function autoUpdateCard() {
         }
     })
     return card("Automatic updates", "For a clock you can't reach on its own network: it checks for new releases and installs them by itself, and can report its status to a URL you watch.", el("div.stack",
-        toggleRow("ota_auto_update", "Check for and install updates automatically", "Once a day (and shortly after every boot) the clock checks the release page and installs new firmware/filesystem images itself. Your settings — network, face, school mode — are kept."),
+        toggleRow("ota_auto_update", "Check for and install updates automatically", "Once a day (and shortly after every boot) the clock checks the release page and installs new firmware/filesystem images itself. Your settings — network, face — are kept."),
         hourRow,
         field("healthcheck_url", "Status heartbeat URL (optional)", textInput("healthcheck_url", { placeholder: "https://hc-ping.com/…", maxlength: 200, trim: true })),
-        el("p.help", "The clock posts a small JSON status (version, uptime, signal, school mode) here on a schedule. ",
+        el("p.help", "The clock posts a small JSON status (version, uptime, signal) here on a schedule. ",
             "Use ", el("a", { href: "https://healthchecks.io", target: "_blank", rel: "noopener noreferrer" }, "healthchecks.io"),
             " to get alerted if the clock ever goes quiet, or ",
             el("a", { href: "https://ntfy.sh", target: "_blank", rel: "noopener noreferrer" }, "ntfy.sh"),

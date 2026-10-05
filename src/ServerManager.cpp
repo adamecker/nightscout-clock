@@ -615,7 +615,7 @@ void ServerManager_::otaPullTask(void* param) {
             // A filesystem update writes the partition the web UI is served
             // from. Back up the runtime settings first: the new image ships
             // only factory defaults, so without this the clock would lose
-            // WiFi, school mode and the selected face on reboot.
+            // WiFi and the selected face on reboot.
             if (self->otaPullCommand == U_SPIFFS) {
                 self->otaConfigBackup = "";
                 if (LittleFS.exists(CONFIG_JSON)) {
@@ -680,7 +680,7 @@ void ServerManager_::otaPullTask(void* param) {
                         if (Update.end(true)) {
                             if (self->otaPullCommand == U_SPIFFS) {
                                 // Restore the runtime settings into the new image so the
-                                // clock comes back on the same network, face and school mode.
+                                // clock comes back on the same network and face.
                                 // Verified: a failed restore removes the partial file so
                                 // boot falls back cleanly.
                                 if (self->otaConfigBackup.length() > 0 &&
@@ -1491,7 +1491,6 @@ void ServerManager_::heartbeatTask(void* param) {
     doc["uptime_s"] = (int)(millis() / 1000);
     doc["rssi_dbm"] = WiFi.RSSI();
     doc["ip"] = WiFi.localIP().toString();
-    doc["school_mode"] = SettingsManager.settings.school_mode_active;
     doc["face"] = SettingsManager.settings.default_clockface;
     doc["display_on"] = !MATRIX_OFF;
     doc["heap_free"] = (int)ESP.getFreeHeap();

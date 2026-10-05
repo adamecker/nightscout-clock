@@ -145,9 +145,6 @@ public:
     void setFace(int id);
     void showNextFace();
     void showPreviousFace();
-    void toggleSchoolMode();
-    bool isSchoolMode() const;
-    void setSchoolMode(bool active);
 };
 
 extern BGDisplayManager_& bgDisplayManager;
