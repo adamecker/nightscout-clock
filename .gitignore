@@ -14,3 +14,4 @@
 /www/debug/manifest.json
 /www/simulator/
 /www/update.json
+/.agents/*

@@ -1,5 +1,6 @@
 {
     "ssid": "",
+    "custom_mac": "",
     "password": "",
     "dhcp": true,
     "ip": "",
@@ -78,6 +79,17 @@
     },
     "face_simple_dark": {
         "value_color": "white"
+    },
+    "face_unicorn": {
+        "mane": "still",
+        "speed": "normal",
+        "flow": "down"
+    },
+    "face_race_car": {
+        "speed": "normal"
+    },
+    "face_dragon": {
+        "speed": "normal"
     },
     "web_auth_enable": false,
     "web_auth_password": "",

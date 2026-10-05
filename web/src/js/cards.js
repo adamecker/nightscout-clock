@@ -403,7 +403,6 @@ function bigTextSettings() {
             "Color late readings until the old-data threshold. Off keeps the usual glucose colors."),
         field("face_big_text_early_stale_minutes", "Late after", segmented("face_big_text", EARLY_STALE_MINUTES, { numeric: true, prop: "early_stale_minutes", label: "Late after" })))
 }
-}
 
 /** Unicorn-mode toggle: when on and BG hits exactly 100, the Nyan unicorn
  * runs across the screen, then the unicorn face stays until the next reading. */
@@ -411,11 +410,6 @@ function unicornModeCard() {
     const toggle = toggleRow("unicorn_mode", "Unicorn mode",
         "When BG is exactly 100, the Nyan unicorn runs across the screen, then the unicorn face stays until the next reading arrives.")
     return card("Unicorn mode", null, el("div.stack", toggle), { id: "card_unicorn" })
-}
-
-function darkFaceSettings() {
-    return field("face_simple_dark_value_color", "Number color", swatches("face_simple_dark", DARK_VALUE_COLORS, { prop: "value_color", label: "Number color", fallback: "white" }),
-        "Both dark faces use it. The trend arrow keeps the glucose colors and old data still uses the old data color, so red, yellow and green here do not track the reading.")
 }
 
 function unicornSettings() {
@@ -434,6 +428,23 @@ function dragonSettings() {
     return el("div.stack",
         field("face_dragon_speed", "Speed", segmented("face_dragon", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
             "The flame moves while the reading is fresh, and goes out when data is old."))
+}
+
+function raceCarSettings() {
+    return el("div.stack",
+        field("face_race_car_speed", "Speed", segmented("face_race_car", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
+            "The speed lines show the glucose color while the reading is fresh, and the race stops in the old data color when data is old."))
+}
+
+function darkFaceSettings() {
+    const warning = el("p.help", { role: "status" },
+        "Gray is not visible at the lowest brightness. Choose another number color if you run the clock dim.")
+    const updateWarning = () => { warning.hidden = form.get("face_simple_dark")?.value_color !== "gray" }
+    updateWarning()
+    onChangeWhileAttached(warning, key => { if (key === "face_simple_dark") updateWarning() })
+    return field("face_simple_dark_value_color", "Number color", el("div.stack",
+        swatches("face_simple_dark", DARK_VALUE_COLORS, { prop: "value_color", label: "Number color", fallback: "white" }), warning),
+        "Both dark faces use it. The trend arrow keeps the glucose colors and old data still uses the old data color, so red, yellow and green here do not track the reading.")
 }
 
 /**
@@ -1366,8 +1377,3 @@ function showTab(name) {
     try { sessionStorage.setItem("tab", name) } catch (e) { /* private mode */ }
 }
 
-function raceCarSettings() {
-    return el("div.stack",
-        field("face_race_car_speed", "Speed", segmented("face_race_car", ANIMATION_SPEEDS, { prop: "speed", label: "Speed" }),
-            "The speed lines show the glucose color while the reading is fresh, and the race stops in the old data color when data is old."))
-}

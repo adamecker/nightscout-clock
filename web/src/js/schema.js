@@ -103,6 +103,7 @@ const FACES = [
     { id: 35, name: "Big text (dark)" },
     { id: 36, name: "Dragon" },
     { id: 37, name: "Race car" },
+
 ]
 
 // The config stores the faces switched off, so a face added later starts active.
@@ -144,6 +145,7 @@ const OLD_DATA_COLORS = [["gray", "Gray"], ["cyan", "Cyan"], ["magenta", "Magent
 // No red, yellow or green: those are glucose colors.
 const EARLY_STALE_COLORS = [["off", "Off"], ["cyan", "Cyan"], ["blue", "Blue"], ["magenta", "Magenta"]]
 const EARLY_STALE_MINUTES = [[6, "6 min"], [10, "10 min"], [15, "15 min"]]
+
 // Every color the firmware can draw except black, which is invisible on the black panel. The glucose
 // colors stay on the trend arrow, so the number keeps whichever of these is chosen.
 const DARK_VALUE_COLORS = [["white", "White"], ["cyan", "Cyan"], ["blue", "Blue"], ["magenta", "Magenta"],
@@ -241,7 +243,7 @@ const buildNightscoutUrl = ({ protocol, host, port }) => `${protocol}://${host.t
 const RX = {
     ssid: /^[\x20-\x7E]{1,32}$/,
     wifiPassword: /^.{8,}$/,
-    macAddress: /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/,
+    macAddress: /^[0-9A-Fa-f]{2}([:-])(?:[0-9A-Fa-f]{2}\1){4}[0-9A-Fa-f]{2}$/,
     dexcomUsername: /^.{6,}$/,
     password: /^.{8,20}$/,
     nsHostname: /(^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$)|(^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$)/,
@@ -329,6 +331,11 @@ function validateConfig(c, ctx) {
     if (!ctx.openNetwork) need("password", RX.wifiPassword.test(text(c.password)), "Password is required and must be at least 8 characters long.")
     const mac = text(c.custom_mac).trim()
     need("custom_mac", !mac || RX.macAddress.test(mac), "MAC address must look like A4:83:E7:2B:10:9C, or be left empty.")
+
+    if (mac && RX.macAddress.test(mac)) {
+        need("custom_mac", (parseInt(mac.slice(0, 2), 16) & 1) === 0,
+            "MAC address must be unicast: the second character must be 0, 2, 4, 6, 8, A, C, or E.")
+    }
 
     // Automatic updates and heartbeat
     if (c.ota_auto_update) need("ota_auto_update_hour", Number.isInteger(c.ota_auto_update_hour) && c.ota_auto_update_hour >= 0 && c.ota_auto_update_hour <= 23, "Check hour must be a whole number from 0 to 23.")
@@ -493,7 +500,7 @@ function normalizeLoaded(c) {
  * @returns {SettingsTab}
  */
 function tabOfKey(key) {
-    if (/^(ssid|password|additional_|custom_hostname|web_auth|ota_auto_update|healthcheck)/.test(key)) return "system"
+    if (/^(ssid|password|additional_|custom_hostname|custom_mac|web_auth|ota_auto_update|healthcheck)/.test(key)) return "system"
     if (/^alarm_/.test(key)) return "alarms"
     if (/^(data_source|ns_|api_secret|nightscout|dexcom|librelinkup|medtrum|units|low_|high_|bg_color)/.test(key)) return "glucose"
     return "display"
@@ -503,7 +510,7 @@ function tabOfKey(key) {
 // Never taken from a file, so a file can't lock anyone out of the clock.
 const NEVER_FROM_FILE = ["web_auth_enable", "web_auth_password"]
 // Taken only when asked: another clock's file would move this clock to that network.
-const NETWORK_KEYS = ["ssid", "password", "dhcp", "ip", "netmask", "gateway", "dns1", "dns2",
+const NETWORK_KEYS = ["ssid", "password", "custom_mac", "dhcp", "ip", "netmask", "gateway", "dns1", "dns2",
     "additional_wifi_enable", "additional_wifi_type", "additional_ssid", "additional_wifi_username", "additional_wifi_password"]
 // The list the page offers for each setting that is picked from one.
 const KEY_OPTIONS = {
@@ -551,21 +558,23 @@ function mergeSettingsFile(file, clock, { network, tzNames }) {
         // A number in the file for a text setting (an older page wrote time_format as 24) is read as that text.
         const value = typeof clock[key] === "string" && typeof file[key] === "number" ? String(file[key]) : file[key]
         if (sameJson(value, clock[key])) continue
-        if (fitsSetting(key, value, clock[key])) {
+        // Check the stored timer even when disabled, without enabling it for cross-setting checks.
+        const validTimer = key !== "custom_nodatatimer" || RX.noDataMinutes.test(String(value))
+        if (fitsSetting(key, value, clock[key]) && validTimer) {
             config[key] = isBlock(clock[key]) ? { ...clone(clock[key]), ...clone(file[key]) } : clone(value)
             taken.push(key)
         } else {
             kept.push(key)
         }
     }
-    // Alarms and the no-data timer are checked as if switched on, so a file can't carry a bad value in one that is off.
-    const allOn = { custom_nodatatimer_enable: true, ...Object.fromEntries(ALARMS.map(a => [`alarm_${a.t}_enabled`, true])) }
+    // Check alarm values even when their alarms are switched off.
+    const alarmsOn = Object.fromEntries(ALARMS.map(a => [`alarm_${a.t}_enabled`, true]))
     const errorKeys = key => (key === "nightscout_url" ? ["ns_host", "ns_port"] : key === "tz_libc" ? ["tz"] : [key])
     // A block's checks report as "<key>_<setting>".
     const hasError = (errors, key) => errorKeys(key).some(k => errors[k] || (isBlock(clock[key]) && Object.keys(errors).some(e => e.startsWith(`${k}_`))))
     for (;;) {
         const c = normalizeLoaded(config)
-        const errors = validateConfig({ ...c, ...allOn }, { openNetwork: isOpenNetwork(c), tzNames })
+        const errors = validateConfig({ ...c, ...alarmsOn }, { openNetwork: isOpenNetwork(c), tzNames })
         const rejected = taken.filter(key => !kept.includes(key) && hasError(errors, key))
         if (!rejected.length) return { config: c, kept }
         rejected.forEach(key => { config[key] = clone(clock[key]); kept.push(key) })
