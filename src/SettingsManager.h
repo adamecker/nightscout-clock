@@ -29,6 +29,9 @@ public:
     static bool parseCustomMac(const String& macStr, uint8_t* macBytes);
 
     Settings settings;
+    // Which config layer the boot loaded: "primary", "backup", "factory",
+    // or "unreadable" (nothing parsed; Wi-Fi came from the NVS fallback).
+    const char* configLoadSource = "unknown";
 };
 
 extern SettingsManager_& SettingsManager;

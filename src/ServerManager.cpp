@@ -1186,7 +1186,9 @@ void ServerManager_::setupWebServer(IPAddress ip) {
         }
         jsonResponse += ", \"faceId\": ";
         jsonResponse += String(bgDisplayManager.getCurrentFaceId());
-        jsonResponse += "}";
+        jsonResponse += ", \"configSource\": \"";
+        jsonResponse += SettingsManager.configLoadSource;
+        jsonResponse += "\"}";
         request->send(200, "application/json", jsonResponse);
     });
 

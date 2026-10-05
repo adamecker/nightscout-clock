@@ -124,6 +124,7 @@ JsonDocument* SettingsManager_::readConfigJsonFile() {
     // 1. Try reading the primary config file
     JsonDocument* doc = safeReadJsonFile(CONFIG_JSON);
     if (doc != NULL) {
+        configLoadSource = "primary";
         return doc;
     }
 
@@ -133,13 +134,19 @@ JsonDocument* SettingsManager_::readConfigJsonFile() {
     if (doc != NULL) {
         DEBUG_PRINTLN("Restoring primary config from /config.bak...");
         copyFile(CONFIG_JSON_BAK, CONFIG_JSON);
+        configLoadSource = "backup";
         return doc;
     }
 
     // 3. Fallback: Only copy factory default if both primary and backup failed
     DEBUG_PRINTLN("Both primary and backup failed. Falling back to factory template...");
     copyFile(CONFIG_JSON_FACTORY, CONFIG_JSON);
-    return safeReadJsonFile(CONFIG_JSON);
+    doc = safeReadJsonFile(CONFIG_JSON);
+    configLoadSource = (doc != NULL) ? "factory" : "unreadable";
+    if (doc == NULL) {
+        DEBUG_PRINTLN("WARNING: no config layer readable; Wi-Fi from NVS fallback only");
+    }
+    return doc;
 }
 
 bool SettingsManager_::isValidAlarmRepeatInterval(int intervalSeconds) {
@@ -210,6 +217,13 @@ bool SettingsManager_::loadSettingsFromFile() {
         settings.web_auth_enable = false;
 
         return true; // Never trigger showFatalError
+    }
+
+    // Guarantee the backup layer exists even if settings were never saved
+    // through the web UI (e.g. after a USB flash): a missing backup halves
+    // the protection against a corrupt primary.
+    if (!LittleFS.exists(CONFIG_JSON_BAK)) {
+        copyFile(CONFIG_JSON, CONFIG_JSON_BAK);
     }
 
     settings.ssid = (*doc)["ssid"].as<String>();

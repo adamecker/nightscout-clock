@@ -70,6 +70,19 @@ function renderStatus(s) {
     pill("pill_reading", s.sgv ? "info" : "", s.sgv ? `${mgdlToText(s.sgv, units)} ${unitLabel(units)}` : "–")
     $("#clock_sub").textContent = `${ui.versions.current ? "v" + ui.versions.current + " · " : ""}${location.host}`
     if (s.bgSource === "LIBRELINKUP" && !wasLlu) form.setCtx("status", s.bgSource)
+    const warn = $("#config_warn")
+    if (warn) {
+        const src = s.configSource
+        if (src === "backup") {
+            warn.hidden = false
+            warn.textContent = "The clock's main settings file was unreadable at boot, so it restored the backup copy. Check that your settings look right."
+        } else if (src === "factory" || src === "unreadable") {
+            warn.hidden = false
+            warn.textContent = "The clock could not read its saved settings at boot and fell back to defaults (Wi-Fi was recovered). Please review and re-save your settings."
+        } else {
+            warn.hidden = true
+        }
+    }
 }
 
 /**
