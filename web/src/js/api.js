@@ -292,16 +292,26 @@ const api = (() => {
         /**
          * Generic JSON request helpers for small endpoints. They throw on
          * transport failure and on non-2xx status; callers handle 401 via the
-         * shared "locked" event.
+         * shared "locked" event. The server's parsed error body, if any, is
+         * attached to the thrown error as `error.data`.
+         * @param {object} [options] - passthrough options for request() (e.g. timeout).
          */
-        async get(path) {
-            const r = await request("GET", path)
-            if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        async get(path, options) {
+            const r = await request("GET", path, options)
+            if (!r.ok) {
+                const err = new Error(`HTTP ${r.status}`)
+                err.data = r.data
+                throw err
+            }
             return r.data
         },
-        async post(path, body) {
-            const r = await request("POST", path, { body })
-            if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        async post(path, body, options) {
+            const r = await request("POST", path, { ...options, body })
+            if (!r.ok) {
+                const err = new Error(`HTTP ${r.status}`)
+                err.data = r.data
+                throw err
+            }
             return r.data
         } }
 })()

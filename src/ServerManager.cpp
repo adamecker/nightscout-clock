@@ -417,24 +417,57 @@ void ServerManager_::handleUpdateRequest(AsyncWebServerRequest* request) {
 static const char* UPDATE_SITE_URL = "https://adamecker.github.io/nightscout-clock";
 static const char* UPDATE_MANIFEST_URL = "https://adamecker.github.io/nightscout-clock/update.json";
 
+// Human-readable text for the negative error codes HTTPClient::GET returns.
+static const char* updateHttpErrorText(int code) {
+    switch (code) {
+        case HTTPC_ERROR_CONNECTION_REFUSED: return "connection refused";
+        case HTTPC_ERROR_SEND_HEADER_FAILED: return "send header failed";
+        case HTTPC_ERROR_SEND_PAYLOAD_FAILED: return "send payload failed";
+        case HTTPC_ERROR_NOT_CONNECTED: return "not connected";
+        case HTTPC_ERROR_CONNECTION_LOST: return "connection lost";
+        case HTTPC_ERROR_NO_STREAM: return "no stream";
+        case HTTPC_ERROR_NO_HTTP_SERVER: return "no HTTP server";
+        case HTTPC_ERROR_TOO_LESS_RAM: return "too little RAM";
+        case HTTPC_ERROR_ENCODING: return "encoding error";
+        case HTTPC_ERROR_STREAM_WRITE: return "stream write failed";
+        case HTTPC_ERROR_READ_TIMEOUT: return "read timeout";
+        default: return "unknown error";
+    }
+}
+
 bool ServerManager_::fetchUpdateManifest(String& body, String& error) {
-    WiFiClientSecure client;
-    client.setInsecure();
-    HTTPClient http;
-    http.setTimeout(15000);
-    if (!http.begin(client, UPDATE_MANIFEST_URL)) {
-        error = "cannot start request";
-        return false;
-    }
-    int code = http.GET();
-    if (code != HTTP_CODE_OK) {
-        error = "manifest request failed: " + String(code);
+    // The ESP32's network stack drops HTTPS fetches transiently (DNS hiccups,
+    // TLS handshakes under heap pressure). Retry a few times before giving up.
+    for (int attempt = 1; attempt <= 3; attempt++) {
+        WiFiClientSecure client;
+        client.setInsecure();
+        HTTPClient http;
+        http.setTimeout(10000);
+        http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+        if (!http.begin(client, UPDATE_MANIFEST_URL)) {
+            error = "cannot start request";
+            return false;
+        }
+        int code = http.GET();
+        if (code == HTTP_CODE_OK) {
+            body = http.getString();
+            http.end();
+            return true;
+        }
+        if (code < 0) {
+            error = String("manifest request failed: ") + updateHttpErrorText(code) +
+                    " (" + String(code) + ")";
+        } else {
+            error = "manifest request failed with HTTP " + String(code);
+        }
         http.end();
-        return false;
+        if (code > 0 && code < 500) {
+            return false;  // a 4xx won't fix itself by retrying
+        }
+        DEBUG_PRINTF("Update manifest attempt %d/3 failed: %s\n", attempt, error.c_str());
+        delay(500);
     }
-    body = http.getString();
-    http.end();
-    return true;
+    return false;
 }
 
 void ServerManager_::handleUpdateCheck(AsyncWebServerRequest* request) {

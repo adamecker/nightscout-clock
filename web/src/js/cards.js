@@ -1113,6 +1113,18 @@ async function loadSettingsFile(input) {
 }
 
 /**
+ * Render an update-check failure, including the clock's own reason when it
+ * reported one (e.g. "connection failed"). Falls back to the generic text
+ * when the browser never got an answer at all.
+ * @param {Error} e - the thrown request error, possibly carrying e.data.
+ * @returns {string}
+ */
+function updateCheckError(e) {
+    const reason = e && e.data && e.data.error
+    return reason ? `Check failed: ${reason}.` : "Check failed: the clock could not reach the release site."
+}
+
+/**
  * Build the network firmware update card: pick a firmware.bin built from this
  * repo, upload it to the matching endpoint, watch progress, and let the clock reboot.
  * @returns {HTMLElement}
@@ -1129,7 +1141,8 @@ function updateCard() {
         checkStatus.textContent = "Checking…"
         installFwBtn.hidden = true
         try {
-            const r = await api.post("/api/update/check")
+            // The clock retries the manifest fetch itself; allow up to 40s.
+            const r = await api.post("/api/update/check", undefined, { timeout: 40000 })
             if (r.updateAvailable) {
                 checkStatus.textContent = `Firmware update available: ${r.latest} (running ${r.current}).`
                 installFwBtn.hidden = false
@@ -1137,7 +1150,7 @@ function updateCard() {
                 checkStatus.textContent = `Firmware up to date (${r.current}).`
             }
         } catch (e) {
-            checkStatus.textContent = "Check failed: the clock could not reach the release site."
+            checkStatus.textContent = updateCheckError(e)
         }
     })
     fwInput.addEventListener("change", () => uploadOta(fwInput, "/api/update/firmware", "firmware"))
@@ -1167,7 +1180,8 @@ function filesystemCard() {
         checkStatus.textContent = "Checking…"
         installFsBtn.hidden = true
         try {
-            const r = await api.post("/api/update/check")
+            // The clock retries the manifest fetch itself; allow up to 40s.
+            const r = await api.post("/api/update/check", undefined, { timeout: 40000 })
             if (r.fsUpdateAvailable) {
                 checkStatus.textContent = `Filesystem update available: ${r.latest} (running ${r.fsCurrent || "unknown"}).`
                 installFsBtn.hidden = false
@@ -1175,7 +1189,7 @@ function filesystemCard() {
                 checkStatus.textContent = `Filesystem up to date (${r.fsCurrent || r.current}).`
             }
         } catch (e) {
-            checkStatus.textContent = "Check failed: the clock could not reach the release site."
+            checkStatus.textContent = updateCheckError(e)
         }
     })
     fsInput.addEventListener("change", () => uploadOta(fsInput, "/api/update/filesystem", "filesystem"))
@@ -1197,9 +1211,9 @@ async function applyOta(type) {
         status = type === "filesystem" ? $("#ota_fs_status") : $("#ota_status")
     const fail = msg => { bar.hidden = true; status.textContent = msg }
     try {
-        await api.post(`/api/update/apply?type=${type}`)
+        await api.post(`/api/update/apply?type=${type}`, undefined, { timeout: 40000 })
     } catch (e) {
-        return void fail("Could not start the update.")
+        return void fail(updateCheckError(e).replace(/^Check failed/, "Could not start the update"))
     }
     bar.hidden = false
     bar.value = 0
