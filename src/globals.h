@@ -5,7 +5,7 @@
 
 #include "LogBuffer.h"
 
-#define VERSION "1.9.0"
+#define VERSION "1.10.0"
 
 #include "enums.h"  // DISPLAY_COLOR etc.
 
