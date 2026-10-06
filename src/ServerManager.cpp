@@ -507,10 +507,11 @@ void ServerManager_::handleUpdateApply(AsyncWebServerRequest* request) {
         return;
     }
     String type = request->hasParam("type") ? request->getParam("type")->value() : "";
-    int command = type == "firmware" ? U_FLASH : type == "filesystem" ? U_SPIFFS : -1;
+    bool both = type == "both";
+    int command = type == "firmware" ? U_FLASH : type == "filesystem" ? U_SPIFFS : both ? U_FLASH : -1;
     if (command < 0) {
         request->send(400, "application/json",
-                      "{\"status\": \"error\", \"error\": \"type must be firmware or filesystem\"}");
+                      "{\"status\": \"error\", \"error\": \"type must be firmware, filesystem, or both\"}");
         return;
     }
     if (otaPullState == OtaPullState::DOWNLOADING || otaPullState == OtaPullState::VERIFYING ||
@@ -533,10 +534,32 @@ void ServerManager_::handleUpdateApply(AsyncWebServerRequest* request) {
                       "{\"status\": \"error\", \"error\": \"invalid manifest\"}");
         return;
     }
+    // A combined update needs the filesystem entry too.
+    if (both && (!doc["filesystem"]["url"].is<const char*>() ||
+                 !doc["filesystem"]["sha256"].is<const char*>())) {
+        request->send(502, "application/json",
+                      "{\"status\": \"error\", \"error\": \"invalid manifest\"}");
+        return;
+    }
     String url = String(UPDATE_SITE_URL) + "/" + doc[key]["url"].as<const char*>();
     String sha256 = doc[key]["sha256"].as<const char*>();
     String startError;
-    if (!startOtaPull(command, url, sha256, true, startError)) {
+    if (both) {
+        // Stash the filesystem image; the pull task chains into it after the
+        // firmware flash succeeds. Firmware goes first without rebooting so
+        // the single reboot at the end lands on both new images.
+        otaPullChainUrl = String(UPDATE_SITE_URL) + "/" + doc["filesystem"]["url"].as<const char*>();
+        otaPullChainSha256 = doc["filesystem"]["sha256"].as<const char*>();
+        otaPullChainPending = true;
+        if (!startOtaPull(command, url, sha256, false, startError)) {
+            otaPullChainUrl = "";
+            otaPullChainSha256 = "";
+            otaPullChainPending = false;
+            request->send(409, "application/json",
+                          "{\"status\": \"error\", \"error\": \"" + startError + "\"}");
+            return;
+        }
+    } else if (!startOtaPull(command, url, sha256, true, startError)) {
         request->send(409, "application/json",
                       "{\"status\": \"error\", \"error\": \"" + startError + "\"}");
         return;
@@ -559,6 +582,7 @@ bool ServerManager_::startOtaPull(int command, const String& url, const String& 
     otaPullSha256 = sha256;
     otaPullCommand = command;
     otaPullReboot = rebootAfter;
+    otaPullPhase = command == U_SPIFFS ? "filesystem" : "firmware";
     otaPullState = OtaPullState::DOWNLOADING;
     otaPullProgress = 0;
     otaPullError = "";
@@ -600,7 +624,9 @@ void ServerManager_::handleUpdateStatus(AsyncWebServerRequest* request) {
     body += state;
     body += "\", \"progress\": ";
     body += otaPullProgress;
-    body += ", \"error\": \"";
+    body += ", \"phase\": \"";
+    body += otaPullPhase;
+    body += "\", \"error\": \"";
     body += otaPullError;
     body += "\"}";
     request->send(200, "application/json", body);
@@ -744,15 +770,42 @@ void ServerManager_::otaPullTask(void* param) {
 
     if (error.isEmpty()) {
         self->otaPullProgress = 100;
-        self->otaPullState = OtaPullState::DONE;
-        if (self->otaPullReboot) {
-            // Let the status poll observe "done" before rebooting.
-            vTaskDelay(pdMS_TO_TICKS(1500));
-            ESP.restart();
+        if (self->otaPullChainPending) {
+            // Combined update: firmware is staged; chain into the filesystem
+            // pull (which reboots on success). Reset the guard state first so
+            // startOtaPull accepts the handoff; it sets DOWNLOADING again
+            // synchronously, so status polling never observes a gap.
+            String chainUrl = self->otaPullChainUrl;
+            String chainSha = self->otaPullChainSha256;
+            self->otaPullChainPending = false;
+            self->otaPullChainUrl = "";
+            self->otaPullChainSha256 = "";
+            self->otaPullState = OtaPullState::IDLE;
+            self->otaPullProgress = 0;
+            String chainError;
+            if (!self->startOtaPull(U_SPIFFS, chainUrl, chainSha, true, chainError)) {
+                self->otaPullError = chainError;
+                self->otaPullState = OtaPullState::ERROR;
+                DEBUG_PRINTF("OTA chained filesystem pull failed to start: %s\n",
+                             chainError.c_str());
+            } else {
+                DEBUG_PRINTLN("OTA firmware pull complete, chained filesystem pull started");
+            }
+        } else {
+            self->otaPullState = OtaPullState::DONE;
+            if (self->otaPullReboot) {
+                // Let the status poll observe "done" before rebooting.
+                vTaskDelay(pdMS_TO_TICKS(1500));
+                ESP.restart();
+            }
         }
     } else {
         self->otaPullError = error;
         self->otaPullState = OtaPullState::ERROR;
+        // A failed phase cancels the rest of a combined update.
+        self->otaPullChainPending = false;
+        self->otaPullChainUrl = "";
+        self->otaPullChainSha256 = "";
         DEBUG_PRINTF("OTA pull failed: %s\n", error.c_str());
     }
     vTaskDelete(NULL);
@@ -848,6 +901,21 @@ bool canReachInternet() {
     DEBUG_PRINTLN("Internet not reachable (bad response)");
     client.stop();
     return false;
+}
+
+// Cache the internet reachability probe: /api/status is polled every 15s by
+// the web UI, and the probe does a blocking TCP connect that can stall the
+// async web server task for up to 4s. Refresh the cache at most every 60s.
+static bool cachedInternetReachable = false;
+static unsigned long lastInternetCheckMs = 0;
+
+bool cachedCanReachInternet() {
+    unsigned long now = millis();
+    if (lastInternetCheckMs == 0 || now - lastInternetCheckMs > 60000) {
+        cachedInternetReachable = canReachInternet();
+        lastInternetCheckMs = now;
+    }
+    return cachedInternetReachable;
 }
 
 void ServerManager_::setupWebServer(IPAddress ip) {
@@ -1170,7 +1238,7 @@ void ServerManager_::setupWebServer(IPAddress ip) {
         String jsonResponse = "{\"isConnected\": ";
         jsonResponse += this->isConnected ? "true" : "false";
         jsonResponse += ", \"hasInternet\": ";
-        jsonResponse += canReachInternet() ? "true" : "false";
+        jsonResponse += cachedCanReachInternet() ? "true" : "false";
         jsonResponse += ", \"isInAPMode\": ";
         jsonResponse += this->isInAPMode ? "true" : "false";
         jsonResponse += ", \"bgSource\": \"";
@@ -1190,6 +1258,16 @@ void ServerManager_::setupWebServer(IPAddress ip) {
         jsonResponse += SettingsManager.configLoadSource;
         jsonResponse += "\"}";
         request->send(200, "application/json", jsonResponse);
+    });
+
+    // Download the in-memory debug log buffer (see LogBuffer). Requires
+    // authentication, same as /api/save, since logs may contain network
+    // details.
+    ws->on("/api/logs", HTTP_GET, [this](AsyncWebServerRequest* request) {
+        if (!enforceAuthentication(request)) {
+            return;
+        }
+        request->send(200, "text/plain", LogBuffer::get());
     });
 
     // Manual heartbeat test ping: POST an optional {"url"} to ping that URL

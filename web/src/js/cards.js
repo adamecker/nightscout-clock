@@ -981,7 +981,7 @@ function alertWindows(a) {
  * @returns {HTMLElement}
  */
 function systemTab() {
-    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), filesystemCard(), autoUpdateCard(), versionCard())
+    return el("div.stack", wifiCard(), extraWifiCard(), hostnameCard(), loginCard(), backupCard(), updateCard(), filesystemCard(), autoUpdateCard(), versionCard(), logsCard())
 }
 
 /**
@@ -1136,10 +1136,13 @@ function updateCard() {
     const checkStatus = el("p.help", { id: "ota_check" })
     const installFwBtn = el("button.btn", { type: "button", hidden: true }, icon("download"), "Install firmware")
     installFwBtn.addEventListener("click", () => applyOta("firmware"))
+    const installBothBtn = el("button.btn", { type: "button", hidden: true }, icon("download"), "Install firmware + filesystem")
+    installBothBtn.addEventListener("click", () => applyOta("both"))
     const checkBtn = el("button.btn", { type: "button" }, icon("refresh"), "Check for updates")
     checkBtn.addEventListener("click", async () => {
         checkStatus.textContent = "Checking…"
         installFwBtn.hidden = true
+        installBothBtn.hidden = true
         try {
             // The clock retries the manifest fetch itself; allow up to 40s.
             const r = await api.post("/api/update/check", undefined, { timeout: 40000 })
@@ -1149,6 +1152,12 @@ function updateCard() {
             } else {
                 checkStatus.textContent = `Firmware up to date (${r.current}).`
             }
+            if (r.fsUpdateAvailable) {
+                checkStatus.textContent += ` Filesystem update available: ${r.latest} (running ${r.fsCurrent || "unknown"}).`
+            }
+            if (r.updateAvailable || r.fsUpdateAvailable) {
+                installBothBtn.hidden = false
+            }
         } catch (e) {
             checkStatus.textContent = updateCheckError(e)
         }
@@ -1156,7 +1165,7 @@ function updateCard() {
     fwInput.addEventListener("change", () => uploadOta(fwInput, "/api/update/firmware", "firmware"))
     return card("Firmware update", "Update over the network: the clock can download a release itself (works from anywhere it has internet), or you can upload firmware.bin from this browser. The clock reboots into the new image after a successful update.", el("div.stack",
         el("div.row", checkBtn),
-        checkStatus, installFwBtn,
+        checkStatus, installFwBtn, installBothBtn,
         el("div.row",
             el("button.btn", { type: "button", onclick: () => fwInput.click() }, icon("upload"), "Upload firmware", fwInput)),
         bar, status), { id: "card_update" })
@@ -1203,10 +1212,11 @@ function filesystemCard() {
 
 /**
  * Start a self-update download on the clock, then poll its progress until done.
- * @param {string} type - "firmware" or "filesystem".
+ * @param {string} type - "firmware", "filesystem", or "both" (firmware then filesystem, one reboot).
  * @returns {Promise<void>}
  */
 async function applyOta(type) {
+    // A combined update runs its progress on the firmware card's elements.
     const bar = type === "filesystem" ? $("#ota_fs_bar") : $("#ota_bar"),
         status = type === "filesystem" ? $("#ota_fs_status") : $("#ota_status")
     const fail = msg => { bar.hidden = true; status.textContent = msg }
@@ -1217,7 +1227,10 @@ async function applyOta(type) {
     }
     bar.hidden = false
     bar.value = 0
-    status.textContent = `Downloading ${type}…`
+    // For a combined update the clock reports which phase is active.
+    const labelFor = s => (type === "both" && s && (s.phase === "firmware" || s.phase === "filesystem")) ? s.phase : type
+    const doneLabel = type === "both" ? "update" : type
+    status.textContent = `Downloading ${labelFor()}…`
     let lost = 0
     const poll = setInterval(async () => {
         let s
@@ -1229,14 +1242,15 @@ async function applyOta(type) {
             // Require consecutive failures so one transient blip can't fake success.
             if (++lost < 3) return
             clearInterval(poll)
-            return void fail(`${type} installed, the clock is rebooting…`)
+            return void fail(`${doneLabel} installed, the clock is rebooting…`)
         }
+        const label = labelFor(s)
         if (s.state === "downloading" || s.state === "verifying") {
             bar.value = s.state === "verifying" ? 100 : s.progress
-            status.textContent = s.state === "verifying" ? `Verifying ${type}…` : `Downloading ${type}… ${s.progress}%`
+            status.textContent = s.state === "verifying" ? `Verifying ${label}…` : `Downloading ${label}… ${s.progress}%`
         } else if (s.state === "done") {
             clearInterval(poll)
-            fail(`${type} installed, the clock is rebooting…`)
+            fail(`${doneLabel} installed, the clock is rebooting…`)
         } else if (s.state === "error") {
             clearInterval(poll)
             fail(`Update failed: ${s.error || "unknown error"}`)
@@ -1343,6 +1357,24 @@ function versionCard() {
         el("dl.kv", el("dt", "Current version"), el("dd", { id: "fw_current" }, ui.versions.current || "…"),
             el("dt", "Latest version"), el("dd", { id: "fw_latest" }, ui.versions.latest || "…")),
         el("p.help", { id: "fw_status" }, ...versionStatusNodes())), { id: "card_version" })
+}
+
+function logsCard() {
+    return card("Debug logs", "Download the clock's recent debug log for troubleshooting.", el("div.stack",
+        el("div.row",
+            el("button.btn", { type: "button", onclick: downloadDebugLogs }, icon("download"), "Download logs"))), { id: "card_logs" })
+}
+
+async function downloadDebugLogs() {
+    let text
+    try { text = await api.downloadLogs() }
+    catch (e) { return toast(e.message || "Could not download the logs.", "bad") }
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }))
+    const link = el("a", { href: url, download: "nightscout-clock-logs.txt", hidden: true })
+    document.body.append(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
 /**

@@ -50,6 +50,13 @@ private:
     int otaPullCommand = 0;  // U_FLASH; Update.h is not included here
     String otaPullUrl;
     String otaPullSha256;
+    // Combined update chaining: type=both flashes firmware first (no reboot),
+    // then the pull task starts the filesystem update from these, which reboots.
+    String otaPullChainUrl;
+    String otaPullChainSha256;
+    bool otaPullChainPending = false;
+    // Active phase for /api/update/status: "firmware" or "filesystem".
+    String otaPullPhase = "firmware";
     void handleUpdateCheck(AsyncWebServerRequest* request);
     void handleUpdateApply(AsyncWebServerRequest* request);
     void handleUpdateStatus(AsyncWebServerRequest* request);
