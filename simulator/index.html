@@ -29,7 +29,7 @@
 </head>
 <body>
 <h1>Nightscout Clock &mdash; Face Simulator</h1>
-<div class="sub">Pixel-exact preview of all 35 clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
+<div class="sub">Pixel-exact preview of all 39 clock faces, rendered with the firmware&rsquo;s own font bitmaps and drawing logic. Animations run live.</div>
 <div class="controls">
   <div class="ctl"><label>Glucose</label><input id="glucose" type="range" min="40" max="400" value="142"><output id="glucoseOut">142</output></div>
   <div class="ctl"><label>Trend</label><select id="trend">
@@ -110,6 +110,26 @@ function drawText(b,F,s,x,y,align,color){ // align: 0 LEFT, 1 RIGHT, 2 CENTER
 // ---- glucose model ----
 function level(sgv){if(sgv<55)return 'UL';if(sgv<70)return 'WL';if(sgv<=180)return 'N';if(sgv<250)return 'WH';return 'UH';}
 function levelColor(sgv){const l=level(sgv);return l==='N'?C.GREEN:((l==='WL'||l==='WH')?C.YELLOW:C.RED);}
+function bandColor(lvl){return lvl==='N'?C.GREEN:((lvl==='WL'||lvl==='WH')?C.YELLOW:((lvl==='UL'||lvl==='UH')?C.RED:C.GRAY));}
+function dim80(c){return ((((c>>11)&31)*0.8|0)<<11)|((((c>>5)&63)*0.8|0)<<5)|(((c&31)*0.8|0));}
+function warnQuarter(sgv,lvl){
+  const low=lvl==='WL';
+  const dist=low?70-sgv:sgv-180, width=low?15:70;
+  return width>0?Math.min(3,Math.max(0,Math.trunc(4*dist/width))):1;
+}
+function motionColor(lvl,quarter,index,frame){
+  const pos=index+frame, third=pos%3===0;
+  let shown=lvl, light=false;
+  if(lvl==='UL'||lvl==='UH'){if(third)return 0;}
+  else if(lvl==='WL'||lvl==='WH'){
+    const urg=lvl==='WL'?'UL':'UH';
+    if(quarter<=1)light=third;
+    else if(quarter===2)shown=third?urg:lvl;
+    else shown=pos%2===0?urg:lvl;
+  }
+  const col=bandColor(shown);
+  return light?dim80(col):col;
+}
 function printable(sgv){return S.mmol?(sgv/18).toFixed(1):String(sgv);}
 let READINGS=[];
 function buildReadings(){
@@ -167,6 +187,61 @@ function graph(b,x0,len,forMin){
 function noDataText(){return S.mmol?"--.-":"---";}
 
 // ================= faces =================
+// ---- animation-face helpers (transcribed from BGDisplayFaceRaceCar/Dragon) ----
+const CAR_ART=["....HH...","BBBBBBB..","BBBBBBBBB"];
+const CAR_OFF=[0,4,2,5];
+function raceCar(b,sgv,old,frame){
+  const lvl=old?'N':level(sgv);
+  const q=old?0:warnQuarter(sgv,lvl);
+  const put=(x,y,c)=>{if(!old)px(b,x,y,c);else if((x+y)%2===0)px(b,x,y,S.stale);};
+  for(let line=0;line<4;line++)for(let x=0;x<7;x++){
+    if((x+frame+CAR_OFF[line])%7>=3)continue;
+    put(x,2+line,motionColor(lvl,q,6-x+line,frame));
+  }
+  for(let x=0;x<16;x++)if((x+frame)%4<2)put(x,7,C.BLUE);
+  for(let row=0;row<3;row++)for(let col=0;col<9;col++){
+    const cell=CAR_ART[row][col];
+    if(cell!=='.')put(7+col,2+row,cell==='H'?C.MAGENTA:C.WHITE);
+  }
+  const spin=frame%2===1;
+  for(const w of [8,13]){put(w,5,spin?C.CYAN:C.BLUE);put(w+1,5,spin?C.BLUE:C.CYAN);}
+}
+const DRAGON_ART=[
+".WW...H.........",
+"WWWW.SSH......t.",
+".WWWSSESS...22.t",
+"..SSSSSST.22112.",
+"S.SSSSS.00011122",
+"SSDDSSST.11122.t",
+".S.S.S.....22.t.",
+"....S..........."];
+const IN_RANGE=[0xF81F,0xE01F,0xB19F,0x781F,0x401F,0x1C9F];
+function dragonColor(cell){return cell==='S'?0x023F:cell==='D'?0xA79F:cell==='W'?0x073F:C.WHITE;}
+function dragon(b,last,old,frame){
+  const sgv=last.sgv, lvl=level(sgv), q=warnQuarter(sgv,lvl);
+  const inRange=lvl==='N';
+  const roll=Math.floor(frame/2)%3, phase=(frame%12)*(2*Math.PI/12);
+  for(let row=0;row<8;row++)for(let col=0;col<16;col++){
+    const cell=DRAGON_ART[row][col];
+    if(cell==='.'||cell==='t'||(cell>='0'&&cell<='2'))continue;
+    if(!old)px(b,col,row,dragonColor(cell));
+    else if((row+col)%2===0)px(b,col,row,cell==='E'?0x18C3:S.stale);
+  }
+  if(old)return;
+  for(let row=0;row<8;row++)for(let col=0;col<16;col++){
+    const cell=DRAGON_ART[row][col];
+    if(cell!=='t'&&(cell<'0'||cell>'2'))continue;
+    let layer=cell==='t'?3:(((cell.charCodeAt(0)-48-roll)%3)+3)%3;
+    const flick=Math.sin(phase-col*0.9+row*1.3);
+    if(flick>0.7)layer=Math.max(0,layer-1);
+    else if(flick<-0.7)layer++;
+    if(layer>3)continue;
+    let dr=row;
+    if(layer===3){const bob=Math.sin(phase-col*0.8-row);
+      dr=Math.min(7,Math.max(0,row+(bob>0.5?-1:bob<-0.5?1:0)));}
+    px(b,col,dr,inRange?IN_RANGE[layer]:motionColor(lvl,q,15-col,frame));
+  }
+}
 const FACES=[
 {name:"Simple",draw(b,t){
   const last=READINGS[READINGS.length-1],old=isOld();
@@ -504,6 +579,34 @@ const FACES=[
     if(last)trendArrow(b,last,cx+1,1,old);
     if(last)timerBlocks(b,last,32,0,7);
   }
+}},
+{name:"Simple (dark)",draw(b,t){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  if(!last){drawText(b,AW,noDataText(),0,6,2,S.stale);return;}
+  const lvl=level(last.sgv), urg=lvl==='UL'||lvl==='UH';
+  drawText(b,AW,printable(last.sgv),0,6,2,old?S.stale:(urg?bandColor(lvl):C.WHITE));
+  trendArrow(b,last,27,1,old,true);
+}},
+{name:"Big text (dark)",draw(b,t){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  const s=last?printable(last.sgv):noDataText();
+  const lvl=last?level(last.sgv):'N', urg=lvl==='UL'||lvl==='UH';
+  drawText(b,MU,s,0,7,0,!last||old?S.stale:(urg?bandColor(lvl):C.WHITE));
+  if(last)trendArrow(b,last,27,1,old,true);
+}},
+{name:"Dragon",draw(b,t){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  if(!last){drawText(b,AW,noDataText(),0,6,2,S.stale);return;}
+  dragon(b,last,old,old?0:Math.floor(t/110));
+  drawText(b,AW,printable(last.sgv),31,6,1,old?S.stale:levelColor(last.sgv));
+  timerBlocks(b,last,16,16,7);
+}},
+{name:"Race car",draw(b,t){
+  const last=READINGS[READINGS.length-1],old=isOld();
+  if(!last){drawText(b,AW,noDataText(),0,6,2,S.stale);return;}
+  raceCar(b,last.sgv,old,old?0:Math.floor(t/110));
+  drawText(b,AW,printable(last.sgv),31,6,1,old?S.stale:levelColor(last.sgv));
+  timerBlocks(b,last,16,16,7);
 }},
 
 ];
